@@ -14,8 +14,201 @@ datasource db {
 }
 
 model User {
-  id       String @id @default(cuid())
-  email    String @unique
-  username String
-  password String
+  id         String   @id @default(uuid())
+  email      String   @unique
+  username   String
+  password   String
+  estaActivo Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+}
+
+model Nivel {
+  id       String    @id @default(uuid())
+  semestre Int
+  materias Materia[]
+
+  estaActivo Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+}
+
+model Materia {
+  id              String         @id @default(uuid())
+  sigla           String         @unique
+  nombre          String
+  creditos        Int
+  esElectiva      Boolean        @default(false)
+  estaActiva      Boolean        @default(true)
+  nivelId         String
+  nivel           Nivel          @relation(fields: [nivelId], references: [id])
+  grupoMateria    GrupoMateria[]
+  planDeEstudioId String
+  planDeEstudio   PlanDeEstudio  @relation(fields: [planDeEstudioId], references: [id])
+
+  siglaMateria      Prerequisito[] @relation("MateriaRequiere")
+  siglaPrerequisito Prerequisito[] @relation("EsRequisitoDe")
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model Prerequisito {
+  siglaMateria      String @map("siglaMateria")
+  siglaPrerequisito String @map("siglaPrerequisito")
+
+  materia      Materia @relation("MateriaRequiere", fields: [siglaMateria], references: [sigla])
+  prerequisito Materia @relation("EsRequisitoDe", fields: [siglaPrerequisito], references: [sigla])
+
+  @@id([siglaMateria, siglaPrerequisito])
+  @@index([siglaPrerequisito])
+  @@index([siglaMateria])
+}
+
+model GrupoMateria {
+  id                   String             @id @default(uuid())
+  nombre               String
+  materiaId            String
+  materia              Materia            @relation(fields: [materiaId], references: [id])
+  docenteId            String
+  docente              Docente            @relation(fields: [docenteId], references: [id])
+  detalleInscripcionId String
+  detalleInscripcion   DetalleInscripcion @relation(fields: [detalleInscripcionId], references: [id])
+  aulaGrupoMateriaId   String
+  aulaGrupoMateria     AulaGrupoMateria   @relation(fields: [aulaGrupoMateriaId], references: [id])
+  periodoId            String
+  periodo              Periodo            @relation(fields: [periodoId], references: [id])
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model PlanDeEstudio {
+  id        String    @id @default(uuid())
+  version   String
+  materias  Materia[]
+  carreraId String
+  carrera   Carrera   @relation(fields: [carreraId], references: [id])
+  updatedAt DateTime  @updatedAt
+  createdAt DateTime  @default(now())
+}
+
+model Carrera {
+  id            String          @id @default(uuid())
+  codigo        String
+  nombre        String
+  planDeEstudio PlanDeEstudio[]
+  updatedAt     DateTime        @updatedAt
+  createdAt     DateTime        @default(now())
+}
+
+model Docente {
+  id               String         @id @default(uuid())
+  nombre           String
+  apellido_paterno String
+  apellido_materno String
+  ci               String         @unique
+  registro         String         @unique
+  email            String         @unique
+  telefono         String
+  grupoMateria     GrupoMateria[]
+  password         String
+  estaActivo       Boolean        @default(true)
+  updatedAt        DateTime       @updatedAt
+  createdAt        DateTime       @default(now())
+}
+
+model Estudiante {
+  id               String             @id @default(uuid())
+  nombre           String
+  apellido_paterno String
+  apellido_materno String
+  telefono         String
+  ci               String             @unique
+  email            String             @unique
+  matricula        String             @unique
+  password         String
+  estaActivo       Boolean            @default(true)
+  fichaInscripcion FichaInscripcion[]
+  updatedAt        DateTime           @updatedAt
+  createdAt        DateTime           @default(now())
+}
+
+model FichaInscripcion {
+  id                 String               @id @default(uuid())
+  estudianteId       String
+  estudiante         Estudiante           @relation(fields: [estudianteId], references: [id])
+  detalleInscripcion DetalleInscripcion[]
+  estaActivo         Boolean              @default(true)
+  updatedAt          DateTime             @updatedAt
+  createdAt          DateTime             @default(now())
+}
+
+model DetalleInscripcion {
+  id                 String           @id @default(uuid())
+  fichaInscripcionId String
+  fichaInscripcion   FichaInscripcion @relation(fields: [fichaInscripcionId], references: [id])
+  grupoMateriaId     GrupoMateria[]
+  estaActivo         Boolean          @default(true)
+  updatedAt          DateTime         @updatedAt
+  createdAt          DateTime         @default(now())
+}
+
+model AulaGrupoMateria {
+  id           String         @id @default(uuid())
+  grupoMateria GrupoMateria[]
+  aula         Aula[]
+  estaActivo   Boolean        @default(true)
+  updatedAt    DateTime       @updatedAt
+  createdAt    DateTime       @default(now())
+}
+
+model Modulo {
+  id         String   @id @default(uuid())
+  numero     Int
+  aula       Aula[]
+  estaActivo Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+}
+
+model Aula {
+  id                 String           @id @default(uuid())
+  numero             String
+  capacidad          Int
+  aulaGrupoMateriaId String
+  aulaGrupoMateria   AulaGrupoMateria @relation(fields: [aulaGrupoMateriaId], references: [id])
+  moduloId           String
+  Modulo             Modulo           @relation(fields: [moduloId], references: [id])
+
+  estaActivo Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+
+  @@unique([numero, moduloId])
+}
+
+model Gestion {
+  id      String    @id @default(uuid())
+  año    String
+  periodo Periodo[]
+
+  estaActivo Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+}
+
+model Periodo {
+  id           String         @id @default(uuid())
+  numero       String
+  fechaInicio  DateTime
+  fechaFin     DateTime
+  grupoMateria GrupoMateria[]
+  gestionId    String
+  gestion      Gestion        @relation(fields: [gestionId], references: [id])
+  estaActivo   Boolean        @default(true)
+  updatedAt    DateTime       @updatedAt
+  createdAt    DateTime       @default(now())
+
+  @@unique([numero, gestionId])
 }
