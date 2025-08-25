@@ -1,7 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { MateriasService } from './materias.service';
-import { CreateMateriaDto } from './dto/create-materia.dto';
-import { UpdateMateriaDto } from './dto/update-materia.dto';
+import type { CreateMateriaDto } from './dto/create-materia.dto';
+import type { UpdateMateriaDto } from './dto/update-materia.dto';
 
 @Controller('materias')
 export class MateriasController {
@@ -19,16 +27,16 @@ export class MateriasController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.materiasService.findOne(+id);
+    return this.materiasService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateMateriaDto: UpdateMateriaDto) {
-    return this.materiasService.update(+id, updateMateriaDto);
+    return this.materiasService.update(id, updateMateriaDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.materiasService.remove(+id);
+    return this.materiasService.remove(id);
   }
 }
