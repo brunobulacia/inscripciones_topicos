@@ -33,6 +33,9 @@ export class MateriasService {
     });
   }
 
+  //NOS QUEDAMOS AQUI EN ARMAR LA MALLA DE INFORMATICA
+  //HAY QUE HACER PAGINACION
+
   async findOne(id: string): Promise<Materia | null> {
     const foundMateria = await this.prismaService.materia.findUnique({
       where: { id, estaActiva: true },

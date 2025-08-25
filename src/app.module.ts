@@ -8,9 +8,12 @@ import { PlanesDeEstudioModule } from './planes_de_estudio/planes_de_estudio.mod
 import { NivelesModule } from './niveles/niveles.module';
 import { MateriasModule } from './materias/materias.module';
 import { PrerequisitosModule } from './prerequisitos/prerequisitos.module';
+import { GrupoMateriasModule } from './grupo_materias/grupo_materias.module';
+import { DocentesModule } from './docentes/docentes.module';
+import { EstudiantesModule } from './estudiantes/estudiantes.module';
 
 @Module({
-  imports: [UsersModule, AuthModule, CarrerasModule, PlanesDeEstudioModule, NivelesModule, MateriasModule, PrerequisitosModule],
+  imports: [UsersModule, AuthModule, CarrerasModule, PlanesDeEstudioModule, NivelesModule, MateriasModule, PrerequisitosModule, GrupoMateriasModule, DocentesModule, EstudiantesModule],
   controllers: [],
   providers: [
     {
