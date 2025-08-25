@@ -36,6 +36,10 @@ export class MateriasService {
   async findOne(id: string): Promise<Materia | null> {
     const foundMateria = await this.prismaService.materia.findUnique({
       where: { id, estaActiva: true },
+      include: {
+        siglaMateria: {},
+        siglaPrerequisito: { select: { siglaPrerequisito: true } },
+      },
     });
 
     if (!foundMateria) {

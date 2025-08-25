@@ -75,16 +75,14 @@ model Prerequisito {
   id                String  @id @default(uuid())
   siglaMateria      String  @map("siglaMateria")
   siglaPrerequisito String  @map("siglaPrerequisito")
-  materia           Materia @relation("MateriaRequiere", fields: [siglaMateria], references: [sigla])
-  prerequisito      Materia @relation("EsRequisitoDe", fields: [siglaPrerequisito], references: [sigla])
+  materia           Materia @relation("MateriaRequiere", fields: [siglaMateria], references: [id])
+  prerequisito      Materia @relation("EsRequisitoDe", fields: [siglaPrerequisito], references: [id])
 
   esActivo  Boolean  @default(true)
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 
   @@unique([siglaMateria, siglaPrerequisito])
-  @@index([siglaPrerequisito])
-  @@index([siglaMateria])
 }
 
 model GrupoMateria {
