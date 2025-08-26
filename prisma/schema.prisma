@@ -129,6 +129,7 @@ model Estudiante {
   email            String             @unique
   matricula        String             @unique
   password         String
+  ppac             Int
   estaActivo       Boolean            @default(true)
   fichaInscripcion FichaInscripcion[]
   avanceAcademico  AvanceAcademico?
