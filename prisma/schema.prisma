@@ -131,8 +131,33 @@ model Estudiante {
   password         String
   estaActivo       Boolean            @default(true)
   fichaInscripcion FichaInscripcion[]
+  avanceAcademico  AvanceAcademico?
+  boleta           BoletaInscripcion?
   updatedAt        DateTime           @updatedAt
   createdAt        DateTime           @default(now())
+}
+
+model BoletaInscripcion {
+  id                 String           @id @default(uuid())
+  fichaInscripcionId String           @unique
+  fichaInscripcion   FichaInscripcion @relation(fields: [fichaInscripcionId], references: [id])
+  avanceAcademicoId  String?
+  avanceAcademico    AvanceAcademico? @relation(fields: [avanceAcademicoId], references: [id])
+  estudianteId       String?          @unique
+  estudiante         Estudiante?      @relation(fields: [estudianteId], references: [id])
+  estaActivo         Boolean          @default(true)
+  updatedAt          DateTime         @updatedAt
+  createdAt          DateTime         @default(now())
+}
+
+model AvanceAcademico {
+  id                String              @id @default(uuid())
+  boletaInscripcion BoletaInscripcion[]
+  estudianteId      String?             @unique
+  estudiante        Estudiante?         @relation(fields: [estudianteId], references: [id])
+  estaActivo        Boolean             @default(true)
+  updatedAt         DateTime            @updatedAt
+  createdAt         DateTime            @default(now())
 }
 
 model FichaInscripcion {
@@ -211,23 +236,4 @@ model Periodo {
   createdAt    DateTime       @default(now())
 
   @@unique([numero, gestionId])
-}
-
-model BoletaInscripcion {
-  id                 String           @id @default(uuid())
-  fichaInscripcionId String           @unique
-  fichaInscripcion   FichaInscripcion @relation(fields: [fichaInscripcionId], references: [id])
-  avanceAcademicoId  String
-  avanceAcademico    AvanceAcademico  @relation(fields: [avanceAcademicoId], references: [id])
-  estaActivo         Boolean          @default(true)
-  updatedAt          DateTime         @updatedAt
-  createdAt          DateTime         @default(now())
-}
-
-model AvanceAcademico {
-  id                String              @id @default(uuid())
-  boletaInscripcion BoletaInscripcion[]
-  estaActivo        Boolean             @default(true)
-  updatedAt         DateTime            @updatedAt
-  createdAt         DateTime            @default(now())
 }
