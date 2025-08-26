@@ -98,6 +98,7 @@ model GrupoMateria {
   aulaGrupoMateria     AulaGrupoMateria   @relation(fields: [aulaGrupoMateriaId], references: [id])
   periodoId            String
   periodo              Periodo            @relation(fields: [periodoId], references: [id])
+  horarios             Horario[]
   estaActivo           Boolean            @default(true)
   updatedAt            DateTime           @updatedAt
   createdAt            DateTime           @default(now())
@@ -129,7 +130,7 @@ model Estudiante {
   email            String             @unique
   matricula        String             @unique
   password         String
-  ppac             Int
+  ppac             Int                @default(0)
   estaActivo       Boolean            @default(true)
   fichaInscripcion FichaInscripcion[]
   avanceAcademico  AvanceAcademico?
@@ -237,4 +238,18 @@ model Periodo {
   createdAt    DateTime       @default(now())
 
   @@unique([numero, gestionId])
+}
+
+model Horario {
+  id             String       @id @default(uuid())
+  diaSemana      String // "Lunes", "Martes", etc.
+  horaInicio     String // "08:00"
+  horaFin        String // "10:00"
+  grupoMateriaId String
+  grupoMateria   GrupoMateria @relation(fields: [grupoMateriaId], references: [id])
+  estaActivo     Boolean      @default(true)
+  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime     @default(now())
+
+  @@unique([grupoMateriaId, diaSemana, horaInicio])
 }

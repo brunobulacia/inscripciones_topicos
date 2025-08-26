@@ -27,7 +27,7 @@ const niveles = [
   {
     id: 'af527c69-db52-4e3e-82d7-200d1d5760f6',
     semestre: 1,
-    estaActivo: false,
+    estaActivo: true,
   },
   { id: '8ec6bf45-72b4-4306-b6fa-8ddeb4d588c5', semestre: 2, estaActivo: true },
   { id: 'f333303b-1801-4930-b4a9-080de1a131f8', semestre: 3, estaActivo: true },
@@ -949,39 +949,26 @@ const docentesBase = [
 ];
 
 // ---- Datasets adicionales para el resto de modelos ----
-const modulos = [
-  { id: '4e9e7f2d-6d8a-41d3-9d2a-b5a1b6b60001', numero: 1 },
-  { id: '4e9e7f2d-6d8a-41d3-9d2a-b5a1b6b60002', numero: 2 },
-];
+const modulos = [{ id: '4e9e7f2d-6d8a-41d3-9d2a-b5a1b6b60236', numero: 236 }];
 
 const aulaGrupoMaterias = [
   { id: 'c3d5f8a1-1f11-4f2a-9b61-111111111111' },
   { id: 'c3d5f8a1-1f11-4f2a-9b61-222222222222' },
+  { id: 'c3d5f8a1-1f11-4f2a-9b61-333333333333' },
+  { id: 'c3d5f8a1-1f11-4f2a-9b61-444444444444' },
 ];
 
-const aulas = [
-  {
-    id: 'aa111111-2222-3333-4444-555555555550',
-    numero: 101,
-    capacidad: 40,
-    aulaGrupoMateriaId: 'c3d5f8a1-1f11-4f2a-9b61-111111111111',
-    moduloId: '4e9e7f2d-6d8a-41d3-9d2a-b5a1b6b60001',
-  },
-  {
-    id: 'aa111111-2222-3333-4444-555555555551',
-    numero: 102,
+// Generar aulas del 11 al 46 en el módulo 236
+const aulas: any[] = [];
+for (let numero = 11; numero <= 46; numero++) {
+  aulas.push({
+    id: `aula-236-${numero.toString().padStart(2, '0')}`,
+    numero: numero,
     capacidad: 35,
-    aulaGrupoMateriaId: 'c3d5f8a1-1f11-4f2a-9b61-111111111111',
-    moduloId: '4e9e7f2d-6d8a-41d3-9d2a-b5a1b6b60001',
-  },
-  {
-    id: 'aa111111-2222-3333-4444-555555555552',
-    numero: 201,
-    capacidad: 45,
-    aulaGrupoMateriaId: 'c3d5f8a1-1f11-4f2a-9b61-222222222222',
-    moduloId: '4e9e7f2d-6d8a-41d3-9d2a-b5a1b6b60002',
-  },
-];
+    aulaGrupoMateriaId: 'c3d5f8a1-1f11-4f2a-9b61-111111111111', // Por defecto
+    moduloId: '4e9e7f2d-6d8a-41d3-9d2a-b5a1b6b60236',
+  });
+}
 
 const gestiones = [{ id: '7a7c4c88-9c2a-4e74-9c1b-aaaaaaaaaaaa', año: '2025' }];
 
@@ -1088,6 +1075,18 @@ const detallesInscripcion = [
     id: 'd1c33333-4444-5555-6666-000000000003',
     fichaInscripcionId: 'f1b22222-3333-4444-5555-000000000003',
   },
+  {
+    id: 'd1c33333-4444-5555-6666-000000000004',
+    fichaInscripcionId: 'f1b22222-3333-4444-5555-000000000001',
+  },
+  {
+    id: 'd1c33333-4444-5555-6666-000000000005',
+    fichaInscripcionId: 'f1b22222-3333-4444-5555-000000000002',
+  },
+  {
+    id: 'd1c33333-4444-5555-6666-000000000006',
+    fichaInscripcionId: 'f1b22222-3333-4444-5555-000000000003',
+  },
 ];
 
 const sampleMaterias = [
@@ -1097,10 +1096,11 @@ const sampleMaterias = [
 ];
 
 const grupoMaterias = [
+  // Grupos para MAT-101 (Cálculo I)
   {
     id: 'g1d44444-5555-6666-7777-000000000001',
-    nombre: 'GRUPO-01-CALCULO',
-    materiaId: sampleMaterias[0],
+    nombre: 'SC',
+    materiaId: sampleMaterias[0], // MAT-101
     docenteId: '' as string,
     detalleInscripcionId: 'd1c33333-4444-5555-6666-000000000001',
     aulaGrupoMateriaId: 'c3d5f8a1-1f11-4f2a-9b61-111111111111',
@@ -1108,8 +1108,8 @@ const grupoMaterias = [
   },
   {
     id: 'g1d44444-5555-6666-7777-000000000002',
-    nombre: 'GRUPO-01-ED',
-    materiaId: sampleMaterias[1],
+    nombre: 'SA',
+    materiaId: sampleMaterias[0], // MAT-101
     docenteId: '' as string,
     detalleInscripcionId: 'd1c33333-4444-5555-6666-000000000002',
     aulaGrupoMateriaId: 'c3d5f8a1-1f11-4f2a-9b61-222222222222',
@@ -1117,12 +1117,128 @@ const grupoMaterias = [
   },
   {
     id: 'g1d44444-5555-6666-7777-000000000003',
-    nombre: 'GRUPO-01-PROGI',
-    materiaId: sampleMaterias[2],
+    nombre: 'SX',
+    materiaId: sampleMaterias[0], // MAT-101
     docenteId: '' as string,
     detalleInscripcionId: 'd1c33333-4444-5555-6666-000000000003',
+    aulaGrupoMateriaId: 'c3d5f8a1-1f11-4f2a-9b61-333333333333',
+    periodoId: '9b0f2d71-4c4e-4a3b-bbbb-bbbbbbbbbbbb',
+  },
+  {
+    id: 'g1d44444-5555-6666-7777-000000000004',
+    nombre: 'NW',
+    materiaId: sampleMaterias[0], // MAT-101
+    docenteId: '' as string,
+    detalleInscripcionId: 'd1c33333-4444-5555-6666-000000000004',
+    aulaGrupoMateriaId: 'c3d5f8a1-1f11-4f2a-9b61-444444444444',
+    periodoId: '9b0f2d71-4c4e-4a3b-bbbb-bbbbbbbbbbbb',
+  },
+  // Grupos para INF119 (Estructuras Discretas)
+  {
+    id: 'g1d44444-5555-6666-7777-000000000005',
+    nombre: 'SC',
+    materiaId: sampleMaterias[1], // INF119
+    docenteId: '' as string,
+    detalleInscripcionId: 'd1c33333-4444-5555-6666-000000000005',
     aulaGrupoMateriaId: 'c3d5f8a1-1f11-4f2a-9b61-111111111111',
+    periodoId: '9b0f2d71-4c4e-4a3b-bbbb-bbbbbbbbbbbb',
+  },
+  // Grupos para INF110 (Introducción a la Informática)
+  {
+    id: 'g1d44444-5555-6666-7777-000000000006',
+    nombre: 'R1',
+    materiaId: sampleMaterias[2], // INF110
+    docenteId: '' as string,
+    detalleInscripcionId: 'd1c33333-4444-5555-6666-000000000006',
+    aulaGrupoMateriaId: 'c3d5f8a1-1f11-4f2a-9b61-222222222222',
     periodoId: '9b0f2d71-4c4e-4a3b-bbbb-cccccccccccc',
+  },
+];
+
+// Horarios para los grupos de materias
+const horarios = [
+  // Horarios para MAT-101 grupo SC
+  {
+    id: 'h1000000-1111-2222-3333-000000000001',
+    diaSemana: 'Lunes',
+    horaInicio: '08:00',
+    horaFin: '10:00',
+    grupoMateriaId: 'g1d44444-5555-6666-7777-000000000001', // SC
+  },
+  {
+    id: 'h1000000-1111-2222-3333-000000000002',
+    diaSemana: 'Miércoles',
+    horaInicio: '08:00',
+    horaFin: '10:00',
+    grupoMateriaId: 'g1d44444-5555-6666-7777-000000000001', // SC
+  },
+  {
+    id: 'h1000000-1111-2222-3333-000000000003',
+    diaSemana: 'Viernes',
+    horaInicio: '08:00',
+    horaFin: '10:00',
+    grupoMateriaId: 'g1d44444-5555-6666-7777-000000000001', // SC
+  },
+  // Horarios para MAT-101 grupo SA
+  {
+    id: 'h1000000-1111-2222-3333-000000000004',
+    diaSemana: 'Martes',
+    horaInicio: '10:00',
+    horaFin: '12:00',
+    grupoMateriaId: 'g1d44444-5555-6666-7777-000000000002', // SA
+  },
+  {
+    id: 'h1000000-1111-2222-3333-000000000005',
+    diaSemana: 'Jueves',
+    horaInicio: '10:00',
+    horaFin: '12:00',
+    grupoMateriaId: 'g1d44444-5555-6666-7777-000000000002', // SA
+  },
+  // Horarios para MAT-101 grupo SX
+  {
+    id: 'h1000000-1111-2222-3333-000000000006',
+    diaSemana: 'Lunes',
+    horaInicio: '14:00',
+    horaFin: '16:00',
+    grupoMateriaId: 'g1d44444-5555-6666-7777-000000000003', // SX
+  },
+  {
+    id: 'h1000000-1111-2222-3333-000000000007',
+    diaSemana: 'Miércoles',
+    horaInicio: '14:00',
+    horaFin: '16:00',
+    grupoMateriaId: 'g1d44444-5555-6666-7777-000000000003', // SX
+  },
+  // Horarios para MAT-101 grupo NW (Nocturno/Weekend)
+  {
+    id: 'h1000000-1111-2222-3333-000000000008',
+    diaSemana: 'Sábado',
+    horaInicio: '08:00',
+    horaFin: '12:00',
+    grupoMateriaId: 'g1d44444-5555-6666-7777-000000000004', // NW
+  },
+  // Horarios para INF119 grupo SC
+  {
+    id: 'h1000000-1111-2222-3333-000000000009',
+    diaSemana: 'Martes',
+    horaInicio: '08:00',
+    horaFin: '10:00',
+    grupoMateriaId: 'g1d44444-5555-6666-7777-000000000005', // SC
+  },
+  {
+    id: 'h1000000-1111-2222-3333-000000000010',
+    diaSemana: 'Jueves',
+    horaInicio: '08:00',
+    horaFin: '10:00',
+    grupoMateriaId: 'g1d44444-5555-6666-7777-000000000005', // SC
+  },
+  // Horarios para INF110 grupo R1
+  {
+    id: 'h1000000-1111-2222-3333-000000000011',
+    diaSemana: 'Viernes',
+    horaInicio: '14:00',
+    horaFin: '18:00',
+    grupoMateriaId: 'g1d44444-5555-6666-7777-000000000006', // R1
   },
 ];
 
@@ -1266,23 +1382,33 @@ async function main() {
     `DetallesInscripcion insertados (nuevos): ${detalleResult.count}`,
   );
 
-  // Obtener un listado de docentes para asignar a los grupos (al menos 3 existen)
+  // Obtener un listado de docentes para asignar a los grupos (al menos 6 existen)
   const docentes = await prisma.docente.findMany({
-    take: 3,
+    take: 6,
     orderBy: { createdAt: 'asc' },
   });
-  if (docentes.length < 3) {
+  if (docentes.length < 6) {
     throw new Error('No hay suficientes docentes para crear GrupoMateria');
   }
-  grupoMaterias[0].docenteId = docentes[0].id;
-  grupoMaterias[1].docenteId = docentes[1].id;
-  grupoMaterias[2].docenteId = docentes[2].id;
+  grupoMaterias[0].docenteId = docentes[0].id; // MAT-101 SC
+  grupoMaterias[1].docenteId = docentes[1].id; // MAT-101 SA
+  grupoMaterias[2].docenteId = docentes[2].id; // MAT-101 SX
+  grupoMaterias[3].docenteId = docentes[3].id; // MAT-101 NW
+  grupoMaterias[4].docenteId = docentes[4].id; // INF119 SC
+  grupoMaterias[5].docenteId = docentes[5].id; // INF110 R1
 
   const grupoMatResult = await prisma.grupoMateria.createMany({
     data: grupoMaterias as any,
     skipDuplicates: true,
   });
   console.log(`GrupoMateria insertados (nuevos): ${grupoMatResult.count}`);
+
+  // Insertar horarios
+  const horarioResult = await prisma.horario.createMany({
+    data: horarios,
+    skipDuplicates: true,
+  });
+  console.log(`Horarios insertados (nuevos): ${horarioResult.count}`);
 
   const boletaResult = await prisma.boletaInscripcion.createMany({
     data: boletas,
@@ -1302,6 +1428,7 @@ async function main() {
     prisma.detalleInscripcion.count(),
     prisma.grupoMateria.count(),
     prisma.boletaInscripcion.count(),
+    prisma.horario.count(),
   ]);
   console.table({
     totalModulos: finalCounts[0],
@@ -1315,6 +1442,7 @@ async function main() {
     totalDetalles: finalCounts[8],
     totalGrupoMateria: finalCounts[9],
     totalBoletas: finalCounts[10],
+    totalHorarios: finalCounts[11],
   });
 
   console.log('Seed completado.');

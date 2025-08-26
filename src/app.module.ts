@@ -19,6 +19,8 @@ import { GestionesModule } from './gestiones/gestiones.module';
 import { PeriodosModule } from './periodos/periodos.module';
 import { BoletaInscripcionModule } from './boleta_inscripcion/boleta_inscripcion.module';
 import { AvanceAcademicoModule } from './avance_academico/avance_academico.module';
+import { HorariosModule } from './horarios/horarios.module';
+import { AulaGrupoMateriasModule } from './aula_grupo_materias/aula_grupo_materias.module';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { AvanceAcademicoModule } from './avance_academico/avance_academico.modul
     PeriodosModule,
     BoletaInscripcionModule,
     AvanceAcademicoModule,
+    HorariosModule,
+    AulaGrupoMateriasModule,
   ],
   controllers: [],
   providers: [
