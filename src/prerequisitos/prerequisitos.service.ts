@@ -17,6 +17,10 @@ export class PrerequisitosService {
   ): Promise<Prerequisito> {
     const createdPrerequisito = await this.prismaService.prerequisito.create({
       data: createPrerequisitoDto,
+      include: {
+        materia: { select: { nombre: true } },
+        prerequisito: { select: { nombre: true } },
+      },
     });
 
     if (!createdPrerequisito) {
@@ -26,7 +30,7 @@ export class PrerequisitosService {
     return createdPrerequisito;
   }
 
-  async findAll(): Promise<Prerequisito[]> {
+  async findAll(): Promise<any[]> {
     return this.prismaService.prerequisito.findMany({
       where: { esActivo: true },
     });

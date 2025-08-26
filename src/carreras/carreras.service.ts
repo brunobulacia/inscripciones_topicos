@@ -27,7 +27,6 @@ export class CarrerasService {
   async findAll(): Promise<Carrera[]> {
     return this.prismaService.carrera.findMany({
       where: { estaActivo: true },
-      include: { planDeEstudio: { select: { id: true } } },
     });
   }
 

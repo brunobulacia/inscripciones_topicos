@@ -11,9 +11,36 @@ import { PrerequisitosModule } from './prerequisitos/prerequisitos.module';
 import { GrupoMateriasModule } from './grupo_materias/grupo_materias.module';
 import { DocentesModule } from './docentes/docentes.module';
 import { EstudiantesModule } from './estudiantes/estudiantes.module';
+import { FichasInscripcionModule } from './fichas_inscripcion/fichas_inscripcion.module';
+import { DetallesInscripcionModule } from './detalles_inscripcion/detalles_inscripcion.module';
+import { ModulosModule } from './modulos/modulos.module';
+import { AulasModule } from './aulas/aulas.module';
+import { GestionesModule } from './gestiones/gestiones.module';
+import { PeriodosModule } from './periodos/periodos.module';
+import { BoletaInscripcionModule } from './boleta_inscripcion/boleta_inscripcion.module';
+import { AvanceAcademicoModule } from './avance_academico/avance_academico.module';
 
 @Module({
-  imports: [UsersModule, AuthModule, CarrerasModule, PlanesDeEstudioModule, NivelesModule, MateriasModule, PrerequisitosModule, GrupoMateriasModule, DocentesModule, EstudiantesModule],
+  imports: [
+    UsersModule,
+    AuthModule,
+    CarrerasModule,
+    PlanesDeEstudioModule,
+    NivelesModule,
+    MateriasModule,
+    PrerequisitosModule,
+    GrupoMateriasModule,
+    DocentesModule,
+    EstudiantesModule,
+    FichasInscripcionModule,
+    DetallesInscripcionModule,
+    ModulosModule,
+    AulasModule,
+    GestionesModule,
+    PeriodosModule,
+    BoletaInscripcionModule,
+    AvanceAcademicoModule,
+  ],
   controllers: [],
   providers: [
     {

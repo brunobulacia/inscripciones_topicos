@@ -25,19 +25,12 @@ export class NivelesService {
   }
 
   async findAll(): Promise<Nivel[]> {
-    return this.prismaService.nivel.findMany({
-      include: {
-        materias: { select: { id: true, nombre: true } },
-      },
-    });
+    return this.prismaService.nivel.findMany({});
   }
 
   async findOne(id: string): Promise<Nivel | null> {
     const foundNivel = await this.prismaService.nivel.findUnique({
       where: { id },
-      include: {
-        materias: { select: { id: true, nombre: true } },
-      },
     });
 
     if (!foundNivel) {

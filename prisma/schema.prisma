@@ -112,8 +112,8 @@ model Docente {
   registro         String         @unique
   email            String         @unique
   telefono         String         @unique
-  grupoMateria     GrupoMateria[]
   password         String
+  grupoMateria     GrupoMateria[]
   estaActivo       Boolean        @default(true)
   updatedAt        DateTime       @updatedAt
   createdAt        DateTime       @default(now())
@@ -143,6 +143,7 @@ model FichaInscripcion {
   estaActivo         Boolean              @default(true)
   updatedAt          DateTime             @updatedAt
   createdAt          DateTime             @default(now())
+  boleta             BoletaInscripcion?
 }
 
 model DetalleInscripcion {
@@ -175,7 +176,7 @@ model Modulo {
 
 model Aula {
   id                 String           @id @default(uuid())
-  numero             String
+  numero             Int
   capacidad          Int
   aulaGrupoMateriaId String
   aulaGrupoMateria   AulaGrupoMateria @relation(fields: [aulaGrupoMateriaId], references: [id])
@@ -210,4 +211,23 @@ model Periodo {
   createdAt    DateTime       @default(now())
 
   @@unique([numero, gestionId])
+}
+
+model BoletaInscripcion {
+  id                 String           @id @default(uuid())
+  fichaInscripcionId String           @unique
+  fichaInscripcion   FichaInscripcion @relation(fields: [fichaInscripcionId], references: [id])
+  avanceAcademicoId  String
+  avanceAcademico    AvanceAcademico  @relation(fields: [avanceAcademicoId], references: [id])
+  estaActivo         Boolean          @default(true)
+  updatedAt          DateTime         @updatedAt
+  createdAt          DateTime         @default(now())
+}
+
+model AvanceAcademico {
+  id                String              @id @default(uuid())
+  boletaInscripcion BoletaInscripcion[]
+  estaActivo        Boolean             @default(true)
+  updatedAt         DateTime            @updatedAt
+  createdAt         DateTime            @default(now())
 }

@@ -27,9 +27,9 @@ export class MateriasService {
   async findAll(): Promise<Materia[]> {
     return this.prismaService.materia.findMany({
       where: { estaActiva: true },
-      include: {
-        grupoMateria: { select: { id: true, nombre: true } },
-      },
+      /* include: {
+        planDeEstudio: { select: { carrera: true, version: true } },
+      }, */
     });
   }
 
@@ -39,10 +39,10 @@ export class MateriasService {
   async findOne(id: string): Promise<Materia | null> {
     const foundMateria = await this.prismaService.materia.findUnique({
       where: { id, estaActiva: true },
-      include: {
+      /* include: {
         siglaMateria: {},
         siglaPrerequisito: { select: { siglaPrerequisito: true } },
-      },
+      }, */
     });
 
     if (!foundMateria) {
