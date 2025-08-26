@@ -990,8 +990,14 @@ const periodos = [
 ];
 
 const avances = [
-  { id: '5d8c9f2e-6f55-4c1d-aaaa-dddddddddddd' },
-  { id: '5d8c9f2e-6f55-4c1d-aaaa-eeeeeeeeeeee' },
+  {
+    id: '5d8c9f2e-6f55-4c1d-aaaa-dddddddddddd',
+    estudianteId: 'e1a11111-2222-3333-4444-000000000001', // Juan Perez
+  },
+  {
+    id: '5d8c9f2e-6f55-4c1d-aaaa-eeeeeeeeeeee',
+    estudianteId: 'e1a11111-2222-3333-4444-000000000002', // Ana Gonzalez
+  },
 ];
 
 const estudiantesSeed = [
@@ -1247,11 +1253,13 @@ const boletas = [
     id: 'b0e55555-6666-7777-8888-000000000001',
     fichaInscripcionId: 'f1b22222-3333-4444-5555-000000000001',
     avanceAcademicoId: '5d8c9f2e-6f55-4c1d-aaaa-dddddddddddd',
+    estudianteId: 'e1a11111-2222-3333-4444-000000000001', // Juan Perez
   },
   {
     id: 'b0e55555-6666-7777-8888-000000000002',
     fichaInscripcionId: 'f1b22222-3333-4444-5555-000000000002',
     avanceAcademicoId: '5d8c9f2e-6f55-4c1d-aaaa-eeeeeeeeeeee',
+    estudianteId: 'e1a11111-2222-3333-4444-000000000002', // Ana Gonzalez
   },
 ];
 
@@ -1355,18 +1363,18 @@ async function main() {
   });
   console.log(`Periodos insertados (nuevos): ${periodoResult.count}`);
 
-  const avanceResult = await prisma.avanceAcademico.createMany({
-    data: avances,
-    skipDuplicates: true,
-  });
-  console.log(`Avances insertados (nuevos): ${avanceResult.count}`);
-
   const hashedEst = await bcrypt.hash('Password123!', 10);
   const estudianteResult = await prisma.estudiante.createMany({
     data: estudiantesSeed.map((e) => ({ ...e, password: hashedEst })),
     skipDuplicates: true,
   });
   console.log(`Estudiantes insertados (nuevos): ${estudianteResult.count}`);
+
+  const avanceResult = await prisma.avanceAcademico.createMany({
+    data: avances,
+    skipDuplicates: true,
+  });
+  console.log(`Avances insertados (nuevos): ${avanceResult.count}`);
 
   const fichaResult = await prisma.fichaInscripcion.createMany({
     data: fichasInscripcion,
