@@ -98,7 +98,6 @@ model GrupoMateria {
   aulaGrupoMateria     AulaGrupoMateria   @relation(fields: [aulaGrupoMateriaId], references: [id])
   periodoId            String
   periodo              Periodo            @relation(fields: [periodoId], references: [id])
-  horarios             Horario[]
   estaActivo           Boolean            @default(true)
   updatedAt            DateTime           @updatedAt
   createdAt            DateTime           @default(now())
@@ -187,6 +186,7 @@ model AulaGrupoMateria {
   id           String         @id @default(uuid())
   grupoMateria GrupoMateria[]
   aula         Aula[]
+  horario      Horario[]
   estaActivo   Boolean        @default(true)
   updatedAt    DateTime       @updatedAt
   createdAt    DateTime       @default(now())
@@ -241,15 +241,15 @@ model Periodo {
 }
 
 model Horario {
-  id             String       @id @default(uuid())
-  diaSemana      String // "Lunes", "Martes", etc.
-  horaInicio     String // "08:00"
-  horaFin        String // "10:00"
-  grupoMateriaId String
-  grupoMateria   GrupoMateria @relation(fields: [grupoMateriaId], references: [id])
-  estaActivo     Boolean      @default(true)
-  updatedAt      DateTime     @updatedAt
-  createdAt      DateTime     @default(now())
+  id                 String           @id @default(uuid())
+  diaSemana          String
+  horaInicio         String
+  horaFin            String
+  aulaGrupoMateriaId String
+  aulaGrupoMateria   AulaGrupoMateria @relation(fields: [aulaGrupoMateriaId], references: [id])
+  estaActivo         Boolean          @default(true)
+  updatedAt          DateTime         @updatedAt
+  createdAt          DateTime         @default(now())
 
-  @@unique([grupoMateriaId, diaSemana, horaInicio])
+  @@unique([aulaGrupoMateriaId, diaSemana, horaInicio])
 }

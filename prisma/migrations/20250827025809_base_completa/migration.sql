@@ -1,4 +1,41 @@
 -- CreateTable
+CREATE TABLE "public"."User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "username" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "estaActivo" BOOLEAN NOT NULL DEFAULT true,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."PlanDeEstudio" (
+    "id" TEXT NOT NULL,
+    "version" INTEGER NOT NULL,
+    "carreraId" TEXT NOT NULL,
+    "estaActivo" BOOLEAN NOT NULL DEFAULT true,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PlanDeEstudio_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Carrera" (
+    "id" TEXT NOT NULL,
+    "codigo" INTEGER NOT NULL,
+    "nombre" TEXT NOT NULL,
+    "estaActivo" BOOLEAN NOT NULL DEFAULT true,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Carrera_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "public"."Nivel" (
     "id" TEXT NOT NULL,
     "semestre" INTEGER NOT NULL,
@@ -27,10 +64,14 @@ CREATE TABLE "public"."Materia" (
 
 -- CreateTable
 CREATE TABLE "public"."Prerequisito" (
+    "id" TEXT NOT NULL,
     "siglaMateria" TEXT NOT NULL,
     "siglaPrerequisito" TEXT NOT NULL,
+    "esActivo" BOOLEAN NOT NULL DEFAULT true,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "Prerequisito_pkey" PRIMARY KEY ("siglaMateria","siglaPrerequisito")
+    CONSTRAINT "Prerequisito_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -42,6 +83,7 @@ CREATE TABLE "public"."GrupoMateria" (
     "detalleInscripcionId" TEXT NOT NULL,
     "aulaGrupoMateriaId" TEXT NOT NULL,
     "periodoId" TEXT NOT NULL,
+    "estaActivo" BOOLEAN NOT NULL DEFAULT true,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -77,11 +119,36 @@ CREATE TABLE "public"."Estudiante" (
     "email" TEXT NOT NULL,
     "matricula" TEXT NOT NULL,
     "password" TEXT NOT NULL,
+    "ppac" INTEGER NOT NULL DEFAULT 0,
     "estaActivo" BOOLEAN NOT NULL DEFAULT true,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Estudiante_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."BoletaInscripcion" (
+    "id" TEXT NOT NULL,
+    "fichaInscripcionId" TEXT NOT NULL,
+    "avanceAcademicoId" TEXT,
+    "estudianteId" TEXT,
+    "estaActivo" BOOLEAN NOT NULL DEFAULT true,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BoletaInscripcion_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."AvanceAcademico" (
+    "id" TEXT NOT NULL,
+    "estudianteId" TEXT,
+    "estaActivo" BOOLEAN NOT NULL DEFAULT true,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AvanceAcademico_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -130,7 +197,7 @@ CREATE TABLE "public"."Modulo" (
 -- CreateTable
 CREATE TABLE "public"."Aula" (
     "id" TEXT NOT NULL,
-    "numero" TEXT NOT NULL,
+    "numero" INTEGER NOT NULL,
     "capacidad" INTEGER NOT NULL,
     "aulaGrupoMateriaId" TEXT NOT NULL,
     "moduloId" TEXT NOT NULL,
@@ -166,14 +233,28 @@ CREATE TABLE "public"."Periodo" (
     CONSTRAINT "Periodo_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "public"."Horario" (
+    "id" TEXT NOT NULL,
+    "diaSemana" TEXT NOT NULL,
+    "horaInicio" TEXT NOT NULL,
+    "horaFin" TEXT NOT NULL,
+    "aulaGrupoMateriaId" TEXT NOT NULL,
+    "estaActivo" BOOLEAN NOT NULL DEFAULT true,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Horario_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "public"."User"("email");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Materia_sigla_key" ON "public"."Materia"("sigla");
 
 -- CreateIndex
-CREATE INDEX "Prerequisito_siglaPrerequisito_idx" ON "public"."Prerequisito"("siglaPrerequisito");
-
--- CreateIndex
-CREATE INDEX "Prerequisito_siglaMateria_idx" ON "public"."Prerequisito"("siglaMateria");
+CREATE UNIQUE INDEX "Prerequisito_siglaMateria_siglaPrerequisito_key" ON "public"."Prerequisito"("siglaMateria", "siglaPrerequisito");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Docente_ci_key" ON "public"."Docente"("ci");
@@ -200,10 +281,25 @@ CREATE UNIQUE INDEX "Estudiante_email_key" ON "public"."Estudiante"("email");
 CREATE UNIQUE INDEX "Estudiante_matricula_key" ON "public"."Estudiante"("matricula");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "BoletaInscripcion_fichaInscripcionId_key" ON "public"."BoletaInscripcion"("fichaInscripcionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "BoletaInscripcion_estudianteId_key" ON "public"."BoletaInscripcion"("estudianteId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AvanceAcademico_estudianteId_key" ON "public"."AvanceAcademico"("estudianteId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Aula_numero_moduloId_key" ON "public"."Aula"("numero", "moduloId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Periodo_numero_gestionId_key" ON "public"."Periodo"("numero", "gestionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Horario_aulaGrupoMateriaId_diaSemana_horaInicio_key" ON "public"."Horario"("aulaGrupoMateriaId", "diaSemana", "horaInicio");
+
+-- AddForeignKey
+ALTER TABLE "public"."PlanDeEstudio" ADD CONSTRAINT "PlanDeEstudio_carreraId_fkey" FOREIGN KEY ("carreraId") REFERENCES "public"."Carrera"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Materia" ADD CONSTRAINT "Materia_nivelId_fkey" FOREIGN KEY ("nivelId") REFERENCES "public"."Nivel"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -212,10 +308,10 @@ ALTER TABLE "public"."Materia" ADD CONSTRAINT "Materia_nivelId_fkey" FOREIGN KEY
 ALTER TABLE "public"."Materia" ADD CONSTRAINT "Materia_planDeEstudioId_fkey" FOREIGN KEY ("planDeEstudioId") REFERENCES "public"."PlanDeEstudio"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Prerequisito" ADD CONSTRAINT "Prerequisito_siglaMateria_fkey" FOREIGN KEY ("siglaMateria") REFERENCES "public"."Materia"("sigla") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Prerequisito" ADD CONSTRAINT "Prerequisito_siglaMateria_fkey" FOREIGN KEY ("siglaMateria") REFERENCES "public"."Materia"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Prerequisito" ADD CONSTRAINT "Prerequisito_siglaPrerequisito_fkey" FOREIGN KEY ("siglaPrerequisito") REFERENCES "public"."Materia"("sigla") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Prerequisito" ADD CONSTRAINT "Prerequisito_siglaPrerequisito_fkey" FOREIGN KEY ("siglaPrerequisito") REFERENCES "public"."Materia"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."GrupoMateria" ADD CONSTRAINT "GrupoMateria_materiaId_fkey" FOREIGN KEY ("materiaId") REFERENCES "public"."Materia"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -233,6 +329,18 @@ ALTER TABLE "public"."GrupoMateria" ADD CONSTRAINT "GrupoMateria_aulaGrupoMateri
 ALTER TABLE "public"."GrupoMateria" ADD CONSTRAINT "GrupoMateria_periodoId_fkey" FOREIGN KEY ("periodoId") REFERENCES "public"."Periodo"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "public"."BoletaInscripcion" ADD CONSTRAINT "BoletaInscripcion_fichaInscripcionId_fkey" FOREIGN KEY ("fichaInscripcionId") REFERENCES "public"."FichaInscripcion"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."BoletaInscripcion" ADD CONSTRAINT "BoletaInscripcion_avanceAcademicoId_fkey" FOREIGN KEY ("avanceAcademicoId") REFERENCES "public"."AvanceAcademico"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."BoletaInscripcion" ADD CONSTRAINT "BoletaInscripcion_estudianteId_fkey" FOREIGN KEY ("estudianteId") REFERENCES "public"."Estudiante"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."AvanceAcademico" ADD CONSTRAINT "AvanceAcademico_estudianteId_fkey" FOREIGN KEY ("estudianteId") REFERENCES "public"."Estudiante"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."FichaInscripcion" ADD CONSTRAINT "FichaInscripcion_estudianteId_fkey" FOREIGN KEY ("estudianteId") REFERENCES "public"."Estudiante"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -246,3 +354,6 @@ ALTER TABLE "public"."Aula" ADD CONSTRAINT "Aula_moduloId_fkey" FOREIGN KEY ("mo
 
 -- AddForeignKey
 ALTER TABLE "public"."Periodo" ADD CONSTRAINT "Periodo_gestionId_fkey" FOREIGN KEY ("gestionId") REFERENCES "public"."Gestion"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Horario" ADD CONSTRAINT "Horario_aulaGrupoMateriaId_fkey" FOREIGN KEY ("aulaGrupoMateriaId") REFERENCES "public"."AulaGrupoMateria"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

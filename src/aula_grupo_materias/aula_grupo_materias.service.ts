@@ -27,6 +27,15 @@ export class AulaGrupoMateriasService {
   async findAll(): Promise<AulaGrupoMateria[]> {
     return this.prismaService.aulaGrupoMateria.findMany({
       where: { estaActivo: true },
+      include: {
+        grupoMateria: {
+          select: {
+            id: true,
+            nombre: true,
+            materia: { select: { nombre: true } },
+          },
+        },
+      },
     });
   }
 
