@@ -8,7 +8,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import type { CreateUserDto } from '../users/dto/create-user.dto';
+import type { CreateEstudianteDto } from '../estudiantes/dto/create-estudiante.dto';
 import type { loginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
@@ -19,8 +19,8 @@ export class AuthController {
 
   @Public()
   @Post('register')
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.authService.create(createUserDto);
+  create(@Body() createEstudianteDto: CreateEstudianteDto) {
+    return this.authService.create(createEstudianteDto);
   }
 
   //AL HACER LOGIN EL USUARIO VA A RECIBIR UN ACCESS TOKEN DE TIPO BEARER PARA POSTMAN

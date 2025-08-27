@@ -16,10 +16,15 @@ export class HorariosService {
     const createdHorario = await this.prismaService.horario.create({
       data: createHorarioDto,
       include: {
-        grupoMateria: {
+        aulaGrupoMateria: {
           include: {
-            materia: { select: { nombre: true, sigla: true } },
-            docente: { select: { nombre: true, apellido_paterno: true } },
+            grupoMateria: {
+              include: {
+                materia: { select: { nombre: true, sigla: true } },
+                docente: { select: { nombre: true, apellido_paterno: true } },
+              },
+            },
+            aula: { select: { numero: true } },
           },
         },
       },
@@ -36,10 +41,15 @@ export class HorariosService {
     return this.prismaService.horario.findMany({
       where: { estaActivo: true },
       include: {
-        grupoMateria: {
+        aulaGrupoMateria: {
           include: {
-            materia: { select: { nombre: true, sigla: true } },
-            docente: { select: { nombre: true, apellido_paterno: true } },
+            grupoMateria: {
+              include: {
+                materia: { select: { nombre: true, sigla: true } },
+                docente: { select: { nombre: true, apellido_paterno: true } },
+              },
+            },
+            aula: { select: { numero: true } },
           },
         },
       },
@@ -47,10 +57,10 @@ export class HorariosService {
     });
   }
 
-  async findByGrupoMateria(grupoMateriaId: string): Promise<Horario[]> {
+  async findByAulaGrupoMateria(aulaGrupoMateriaId: string): Promise<Horario[]> {
     return this.prismaService.horario.findMany({
       where: {
-        grupoMateriaId,
+        aulaGrupoMateriaId,
         estaActivo: true,
       },
       orderBy: [{ diaSemana: 'asc' }, { horaInicio: 'asc' }],
@@ -61,10 +71,15 @@ export class HorariosService {
     const foundHorario = await this.prismaService.horario.findUnique({
       where: { id, estaActivo: true },
       include: {
-        grupoMateria: {
+        aulaGrupoMateria: {
           include: {
-            materia: { select: { nombre: true, sigla: true } },
-            docente: { select: { nombre: true, apellido_paterno: true } },
+            grupoMateria: {
+              include: {
+                materia: { select: { nombre: true, sigla: true } },
+                docente: { select: { nombre: true, apellido_paterno: true } },
+              },
+            },
+            aula: { select: { numero: true } },
           },
         },
       },
@@ -84,10 +99,15 @@ export class HorariosService {
       where: { id, estaActivo: true },
       data: updateHorarioDto,
       include: {
-        grupoMateria: {
+        aulaGrupoMateria: {
           include: {
-            materia: { select: { nombre: true, sigla: true } },
-            docente: { select: { nombre: true, apellido_paterno: true } },
+            grupoMateria: {
+              include: {
+                materia: { select: { nombre: true, sigla: true } },
+                docente: { select: { nombre: true, apellido_paterno: true } },
+              },
+            },
+            aula: { select: { numero: true } },
           },
         },
       },

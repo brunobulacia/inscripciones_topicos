@@ -1,3 +1,3 @@
-import { User } from '@prisma/client';
+import { Estudiante } from '@prisma/client';
 
-export type loginDto = Omit<User, 'id' | 'username'>;
+export type loginDto = Omit<Estudiante, 'id' | 'username'>;

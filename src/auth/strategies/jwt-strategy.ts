@@ -20,9 +20,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   //ACA EN EL PAYLOAD VAN LOS DATOS QUE VAMOS A ENVIAR AL USUARIO UNA VEZ VALIDEMOS SU JWT DEL PERRITOOOUU
   async validate(payload: any) {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.estudiante.findUnique({
       where: { id: payload.sub },
-      select: { id: true, email: true, username: true },
+      select: { id: true, email: true, nombre: true },
     });
     if (!user) return null;
     return user;

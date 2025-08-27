@@ -29,14 +29,12 @@ export class GrupoMateriasService {
   async findAll(): Promise<GrupoMateria[]> {
     return this.prismaService.grupoMateria.findMany({
       where: { estaActivo: true },
-      include: { horarios: true },
     });
   }
 
   async findOne(id: string): Promise<GrupoMateria | null> {
     const foundGrupoMateria = await this.prismaService.grupoMateria.findUnique({
       where: { id, estaActivo: true },
-      include: { horarios: true },
     });
 
     if (!foundGrupoMateria) {

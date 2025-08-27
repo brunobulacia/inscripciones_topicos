@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { CreateUserDto } from '../users/dto/create-user.dto';
+import type { CreateEstudianteDto } from '../estudiantes/dto/create-estudiante.dto';
 import type { loginDto } from './dto/login.dto';
-import { User } from '@prisma/client';
+import { Estudiante } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -13,11 +13,11 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createEstudianteDto: CreateEstudianteDto): Promise<Estudiante> {
     try {
-      const hashedPassword = bcrypt.hashSync(createUserDto.password, 10);
-      const user = await this.prismaService.user.create({
-        data: { ...createUserDto, password: hashedPassword },
+      const hashedPassword = bcrypt.hashSync(createEstudianteDto.password, 10);
+      const user = await this.prismaService.estudiante.create({
+        data: { ...createEstudianteDto, password: hashedPassword },
       });
       return user;
     } catch (error) {
@@ -27,7 +27,7 @@ export class AuthService {
 
   async login(loginDto: loginDto): Promise<{ access_token: string } | null> {
     try {
-      const user = await this.prismaService.user.findUnique({
+      const user = await this.prismaService.estudiante.findUnique({
         where: { email: loginDto.email },
       });
       if (user && bcrypt.compareSync(loginDto.password, user.password)) {

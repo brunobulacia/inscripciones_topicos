@@ -15,5 +15,5 @@ export class CreateHorarioDto {
 
   @IsString()
   @IsNotEmpty()
-  grupoMateriaId: string;
+  aulaGrupoMateriaId: string;
 }

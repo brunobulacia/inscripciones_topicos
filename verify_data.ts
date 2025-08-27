@@ -47,10 +47,17 @@ async function verifyData() {
   // Verificar horarios
   const horarios = await prisma.horario.findMany({
     include: {
-      grupoMateria: {
+      aulaGrupoMateria: {
         include: {
-          materia: { select: { nombre: true } },
-          docente: { select: { nombre: true } },
+          grupoMateria: {
+            include: {
+              materia: { select: { nombre: true } },
+              docente: { select: { nombre: true } },
+            },
+          },
+          aula: {
+            select: { numero: true },
+          },
         },
       },
     },
@@ -62,9 +69,15 @@ async function verifyData() {
     console.log(
       `${index + 1}. ${horario.diaSemana} ${horario.horaInicio}-${horario.horaFin}`,
     );
-    console.log(`   Materia: ${horario.grupoMateria.materia.nombre}`);
-    console.log(`   Docente: ${horario.grupoMateria.docente.nombre}`);
-    console.log(`   Grupo: ${horario.grupoMateriaId}\n`);
+    if (horario.aulaGrupoMateria?.grupoMateria?.length > 0) {
+      const grupo = horario.aulaGrupoMateria.grupoMateria[0];
+      console.log(`   Materia: ${grupo.materia.nombre}`);
+      console.log(`   Docente: ${grupo.docente.nombre}`);
+    }
+    if (horario.aulaGrupoMateria?.aula?.length > 0) {
+      console.log(`   Aula: ${horario.aulaGrupoMateria.aula[0].numero}`);
+    }
+    console.log(`   AulaGrupoMateria ID: ${horario.aulaGrupoMateriaId}\n`);
   });
 
   await prisma.$disconnect();

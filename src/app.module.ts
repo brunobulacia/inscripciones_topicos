@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -24,7 +23,6 @@ import { AulaGrupoMateriasModule } from './aula_grupo_materias/aula_grupo_materi
 
 @Module({
   imports: [
-    UsersModule,
     AuthModule,
     CarrerasModule,
     PlanesDeEstudioModule,

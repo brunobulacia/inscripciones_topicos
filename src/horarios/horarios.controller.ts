@@ -25,9 +25,11 @@ export class HorariosController {
     return this.horariosService.findAll();
   }
 
-  @Get('grupo/:grupoMateriaId')
-  findByGrupoMateria(@Param('grupoMateriaId') grupoMateriaId: string) {
-    return this.horariosService.findByGrupoMateria(grupoMateriaId);
+  @Get('aula-grupo/:aulaGrupoMateriaId')
+  findByAulaGrupoMateria(
+    @Param('aulaGrupoMateriaId') aulaGrupoMateriaId: string,
+  ) {
+    return this.horariosService.findByAulaGrupoMateria(aulaGrupoMateriaId);
   }
 
   @Get(':id')
