@@ -21,6 +21,9 @@ import { AvanceAcademicoModule } from './avance_academico/avance_academico.modul
 import { HorariosModule } from './horarios/horarios.module';
 import { AulaGrupoMateriasModule } from './aula_grupo_materias/aula_grupo_materias.module';
 
+//PARA MANEJAR REDIS Y BULLMQ PARA LAS COLAS
+import { BullModule } from '@nestjs/bullmq';
+
 @Module({
   imports: [
     AuthModule,
@@ -42,6 +45,14 @@ import { AulaGrupoMateriasModule } from './aula_grupo_materias/aula_grupo_materi
     AvanceAcademicoModule,
     HorariosModule,
     AulaGrupoMateriasModule,
+
+    //ABRIR UN PUERTO PARA BULLMQ
+    BullModule.forRoot({
+      connection: {
+        host: 'localhost',
+        port: 6379,
+      },
+    }),
   ],
   controllers: [],
   providers: [
