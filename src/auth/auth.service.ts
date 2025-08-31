@@ -19,6 +19,32 @@ export class AuthService {
       const user = await this.prismaService.estudiante.create({
         data: { ...createEstudianteDto, password: hashedPassword },
       });
+
+      //CADA VEZ QUE REGISTRAMOS A UN ALUMNO SE LE CREA UN AVANCE ACADEMICO
+      const createAvanceAcademico =
+        await this.prismaService.avanceAcademico.create({
+          data: {
+            estudiante: {
+              connect: { id: user.id },
+            },
+          },
+        });
+
+      //TAMBIEN SE CREA UNA BOLETA DE INSCRIPCION
+      const createBoletaInscripcion =
+        await this.prismaService.boletaInscripcion.create({
+          data: {
+            estudianteId: user.id,
+            avanceAcademicoId: createAvanceAcademico.id,
+          },
+        });
+
+      //EL ID AVANCE CREADO SE LO PONEMOS AL ESTUDIANTE
+      const updateEstudiante = await this.prismaService.estudiante.update({
+        where: { id: user.id },
+        data: { avanceAcademicoId: createAvanceAcademico.id },
+      });
+
       return user;
     } catch (error) {
       throw new Error('Error creating user');

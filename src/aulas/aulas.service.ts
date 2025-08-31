@@ -8,6 +8,9 @@ import { Aula } from '@prisma/client';
 import { CreateAulaDto } from './dto/create-aula.dto';
 import { UpdateAulaDto } from './dto/update-aula.dto';
 
+//SEEDER
+import { Aulas } from './seed/aula.seeder';
+
 @Injectable()
 export class AulasService {
   constructor(private readonly prismaService: PrismaService) {}
@@ -48,5 +51,18 @@ export class AulasService {
     });
     if (!deletedAula) throw new NotFoundException('Aula no encontrada');
     return deletedAula;
+  }
+
+  //SEEDER
+  async seedAulas() {
+    const aulas = await this.prismaService.aula.createMany({
+      data: Aulas,
+    });
+    return aulas;
+  }
+
+  async clearAulas() {
+    const clearedAulas = await this.prismaService.aula.deleteMany({});
+    return clearedAulas;
   }
 }

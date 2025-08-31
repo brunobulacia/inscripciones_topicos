@@ -113,4 +113,23 @@ export class AulasController {
   remove(@Param('id') id: string) {
     return this.aulaService.remove(id);
   }
+
+  //SEEDER
+  @Post('seed')
+  @ApiOperation({ summary: 'Crear aulas' })
+  @ApiResponse({ status: 201, description: 'Aulas creadas exitosamente' })
+  seed() {
+    return this.aulaService.seedAulas();
+  }
+
+  //CLEAR AULAS
+  @Post('clear')
+  @ApiOperation({ summary: 'Eliminar todas las aulas' })
+  @ApiResponse({
+    status: 200,
+    description: 'Todas las aulas han sido eliminadas',
+  })
+  clear() {
+    return this.aulaService.clearAulas();
+  }
 }

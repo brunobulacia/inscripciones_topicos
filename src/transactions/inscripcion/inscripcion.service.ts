@@ -83,7 +83,7 @@ export class InscripcionService {
 
     //VALIDAR SI EL ESTUDIANTE QUIERE INSCRIBIR MAS DE 7 MATERIAS
     if (
-      materias.length !== createInscripcionDto.materiasId.length &&
+      materias.length !== createInscripcionDto.materiasId.length ||
       materias.length > 7
     ) {
       throw new NotFoundException(

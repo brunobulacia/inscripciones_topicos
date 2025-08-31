@@ -216,7 +216,6 @@ model BoletaGrupoMateria {
 model AvanceAcademico {
   id                String              @id @default(uuid())
   boletaInscripcion BoletaInscripcion[]
-  estado            String
   estaActivo        Boolean             @default(true)
   updatedAt         DateTime            @updatedAt
   createdAt         DateTime            @default(now())
@@ -233,16 +232,15 @@ model Modulo {
 }
 
 model Aula {
-  id                 String           @id @default(uuid())
-  numero             Int
-  capacidad          Int
-  aulaGrupoMateriaId String
-  aulaGrupoMateria   AulaGrupoMateria @relation(fields: [aulaGrupoMateriaId], references: [id])
-  moduloId           String
-  Modulo             Modulo           @relation(fields: [moduloId], references: [id])
-  estaActivo         Boolean          @default(true)
-  updatedAt          DateTime         @updatedAt
-  createdAt          DateTime         @default(now())
+  id               String             @id @default(uuid())
+  numero           Int
+  capacidad        Int                @default(80)
+  aulaGrupoMateria AulaGrupoMateria[]
+  moduloId         String
+  Modulo           Modulo             @relation(fields: [moduloId], references: [id])
+  estaActivo       Boolean            @default(true)
+  updatedAt        DateTime           @updatedAt
+  createdAt        DateTime           @default(now())
 
   @@unique([numero, moduloId])
 }
@@ -265,7 +263,8 @@ model AulaGrupoMateria {
   id             String       @id @default(uuid())
   grupoMateriaId String
   grupoMateria   GrupoMateria @relation(fields: [grupoMateriaId], references: [id])
-  aula           Aula[]
+  aulaId         String
+  aula           Aula         @relation(fields: [aulaId], references: [id])
   horario        Horario[]
   estaActivo     Boolean      @default(true)
   updatedAt      DateTime     @updatedAt
