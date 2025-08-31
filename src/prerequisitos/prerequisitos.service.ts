@@ -33,6 +33,10 @@ export class PrerequisitosService {
   async findAll(): Promise<any[]> {
     return this.prismaService.prerequisito.findMany({
       where: { esActivo: true },
+      include: {
+        materia: { select: { nombre: true } },
+        prerequisito: { select: { nombre: true } },
+      },
     });
   }
 

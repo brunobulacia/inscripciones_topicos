@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { EstudiantesService } from './estudiantes.service';
 import type { CreateEstudianteDto } from './dto/create-estudiante.dto';
@@ -18,6 +19,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
+import { PaginationDto } from './dto/pagination.dto';
 
 @ApiTags('estudiantes')
 @ApiBearerAuth()
@@ -78,8 +80,8 @@ export class EstudiantesController {
       },
     },
   })
-  findAll() {
-    return this.estudiantesService.findAll();
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.estudiantesService.findAll(paginationDto);
   }
 
   @Get(':id')

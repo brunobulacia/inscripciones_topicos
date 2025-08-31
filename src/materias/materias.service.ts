@@ -24,12 +24,13 @@ export class MateriasService {
     return createdMateria;
   }
 
-  async findAll(): Promise<Materia[]> {
+  async findAll(): Promise<any[]> {
     return this.prismaService.materia.findMany({
       where: { estaActiva: true },
-      /* include: {
+      include: {
         planDeEstudio: { select: { carrera: true, version: true } },
-      }, */
+        nivel: true,
+      },
     });
   }
 

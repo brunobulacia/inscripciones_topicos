@@ -23,6 +23,7 @@ import { AulaGrupoMateriasModule } from './aula_grupo_materias/aula_grupo_materi
 
 //PARA MANEJAR REDIS Y BULLMQ PARA LAS COLAS
 import { BullModule } from '@nestjs/bullmq';
+import { InscripcionModule } from './transactions/inscripcion/inscripcion.module';
 
 @Module({
   imports: [
@@ -46,6 +47,9 @@ import { BullModule } from '@nestjs/bullmq';
     HorariosModule,
     AulaGrupoMateriasModule,
 
+    //TRANSACCIONES
+    InscripcionModule,
+
     //ABRIR UN PUERTO PARA BULLMQ
     BullModule.forRoot({
       connection: {
@@ -55,12 +59,12 @@ import { BullModule } from '@nestjs/bullmq';
     }),
   ],
   controllers: [],
-  providers: [
+  /* providers: [
     {
       //PARA PONER EL GUARD DE JWT EN TODOS LOS ENDPOINTS PERRITOUUUU
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
-  ],
+  ], */
 })
 export class AppModule {}

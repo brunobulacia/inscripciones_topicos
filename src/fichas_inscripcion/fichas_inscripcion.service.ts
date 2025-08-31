@@ -27,6 +27,10 @@ export class FichasInscripcionService {
   async findAll(): Promise<FichaInscripcion[]> {
     return this.prismaService.fichaInscripcion.findMany({
       where: { estaActivo: true },
+      include: {
+        estudiante: true,
+        detalleInscripcion: true,
+      },
     });
   }
 

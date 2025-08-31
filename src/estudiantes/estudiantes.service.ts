@@ -7,6 +7,7 @@ import { CreateEstudianteDto } from './dto/create-estudiante.dto';
 import { UpdateEstudianteDto } from './dto/update-estudiante.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Estudiante } from '@prisma/client';
+import { PaginationDto } from './dto/pagination.dto';
 
 @Injectable()
 export class EstudiantesService {
@@ -24,9 +25,12 @@ export class EstudiantesService {
     return createdEstudiante;
   }
 
-  async findAll(): Promise<Estudiante[]> {
+  async findAll(paginationDto: PaginationDto): Promise<Estudiante[]> {
+    const { page = 0, limit = 10 } = paginationDto;
     return this.prismaService.estudiante.findMany({
       where: { estaActivo: true },
+      take: Number(limit),
+      skip: page * limit,
     });
   }
 

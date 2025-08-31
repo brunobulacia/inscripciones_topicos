@@ -31,8 +31,9 @@ export class AulaGrupoMateriasService {
         grupoMateria: {
           select: {
             id: true,
-            nombre: true,
+            grupo: true,
             materia: { select: { nombre: true } },
+            docente: { select: { nombre: true, apellido_paterno: true } },
           },
         },
       },

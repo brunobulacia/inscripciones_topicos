@@ -29,6 +29,10 @@ export class GrupoMateriasService {
   async findAll(): Promise<GrupoMateria[]> {
     return this.prismaService.grupoMateria.findMany({
       where: { estaActivo: true },
+      include: {
+        materia: { select: { nombre: true } },
+        docente: { select: { nombre: true, apellido_paterno: true } },
+      },
     });
   }
 

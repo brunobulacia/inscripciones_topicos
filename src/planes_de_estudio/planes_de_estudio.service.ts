@@ -29,6 +29,9 @@ export class PlanesDeEstudioService {
   async findAll(): Promise<PlanDeEstudio[]> {
     return this.prismaService.planDeEstudio.findMany({
       where: { estaActivo: true },
+      include: {
+        materias: true,
+      },
     });
   }
 
