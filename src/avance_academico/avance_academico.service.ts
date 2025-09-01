@@ -27,6 +27,7 @@ export class AvanceAcademicoService {
   async findAll(): Promise<AvanceAcademico[]> {
     return this.prismaService.avanceAcademico.findMany({
       where: { estaActivo: true },
+      include: { estudiante: true, boletaInscripcion: true },
     });
   }
 
@@ -34,6 +35,7 @@ export class AvanceAcademicoService {
     const foundAvanceAcademico =
       await this.prismaService.avanceAcademico.findUnique({
         where: { id, estaActivo: true },
+        include: { estudiante: true, boletaInscripcion: true },
       });
     if (!foundAvanceAcademico)
       throw new NotFoundException('Avance académico no encontrado');

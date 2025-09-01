@@ -16,36 +16,42 @@ export class AuthService {
   async create(createEstudianteDto: CreateEstudianteDto): Promise<Estudiante> {
     try {
       const hashedPassword = bcrypt.hashSync(createEstudianteDto.password, 10);
+      // 1. Crear el estudiante sin avanceAcademicoId
       const user = await this.prismaService.estudiante.create({
         data: { ...createEstudianteDto, password: hashedPassword },
       });
 
-      //CADA VEZ QUE REGISTRAMOS A UN ALUMNO SE LE CREA UN AVANCE ACADEMICO
-      const createAvanceAcademico =
-        await this.prismaService.avanceAcademico.create({
-          data: {
-            estudiante: {
-              connect: { id: user.id },
-            },
+      // 2. Crear el avance academico y asociar el estudiante
+      const avanceAcademico = await this.prismaService.avanceAcademico.create({
+        data: {
+          estudiante: {
+            connect: { id: user.id },
           },
-        });
-
-      //TAMBIEN SE CREA UNA BOLETA DE INSCRIPCION
-      const createBoletaInscripcion =
-        await this.prismaService.boletaInscripcion.create({
-          data: {
-            estudianteId: user.id,
-            avanceAcademicoId: createAvanceAcademico.id,
-          },
-        });
-
-      //EL ID AVANCE CREADO SE LO PONEMOS AL ESTUDIANTE
-      const updateEstudiante = await this.prismaService.estudiante.update({
-        where: { id: user.id },
-        data: { avanceAcademicoId: createAvanceAcademico.id },
+        },
       });
 
-      return user;
+      // 3. Actualizar el estudiante con el avanceAcademicoId
+      await this.prismaService.estudiante.update({
+        where: { id: user.id },
+        data: { avanceAcademicoId: avanceAcademico.id },
+      });
+
+      // 4. Crear la boleta de inscripcion con el avanceAcademicoId correcto
+      await this.prismaService.boletaInscripcion.create({
+        data: {
+          estudianteId: user.id,
+          avanceAcademicoId: avanceAcademico.id,
+        },
+      });
+
+      // 5. Retornar el estudiante actualizado
+      const updatedUser = await this.prismaService.estudiante.findUnique({
+        where: { id: user.id },
+      });
+      if (!updatedUser) {
+        throw new Error('Updated user not found');
+      }
+      return updatedUser;
     } catch (error) {
       throw new Error('Error creating user');
     }
