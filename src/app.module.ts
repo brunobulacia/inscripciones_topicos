@@ -24,8 +24,10 @@ import { AulaGrupoMateriasModule } from './aula_grupo_materias/aula_grupo_materi
 //PARA MANEJAR REDIS Y BULLMQ PARA LAS COLAS
 import { BullModule } from '@nestjs/bullmq';
 import { InscripcionModule } from './transactions/inscripcion/inscripcion.module';
-import { MaestroDeOfertaModule } from './maestro_de_oferta/maestro_de_oferta.module';
-import { OfertaGmModule } from './oferta_gm/oferta_gm.module';
+import { BoletaGrupoMateriasModule } from './boleta_grupo_materias/boleta_grupo_materias.module';
+import { DetalleInsOfertasModule } from './detalle_ins_ofertas/detalle_ins_ofertas.module';
+import { MaestroDeOfertasModule } from './maestro_de_ofertas/maestro_de_ofertas.module';
+import { OfertaGrupoMateriasModule } from './oferta_grupo_materias/oferta_grupo_materias.module';
 
 @Module({
   imports: [
@@ -60,9 +62,13 @@ import { OfertaGmModule } from './oferta_gm/oferta_gm.module';
       },
     }),
 
-    MaestroDeOfertaModule,
+    BoletaGrupoMateriasModule,
 
-    OfertaGmModule,
+    DetalleInsOfertasModule,
+
+    MaestroDeOfertasModule,
+
+    OfertaGrupoMateriasModule,
   ],
   controllers: [],
   /* providers: [

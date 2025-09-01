@@ -6,8 +6,8 @@ import type { CreateInscripcionDto } from './dto/create-inscripcion.dto';
 export class InscripcionController {
   constructor(private readonly inscripcionService: InscripcionService) {}
 
-  @Post()
+  /* @Post()
   inscripcion(@Body() createInscripcionDto: CreateInscripcionDto) {
     return this.inscripcionService.inscripcion(createInscripcionDto);
-  }
+  } */
 }

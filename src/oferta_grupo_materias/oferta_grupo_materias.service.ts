@@ -1,0 +1,85 @@
+import {
+  Injectable,
+  NotAcceptableException,
+  NotFoundException,
+} from '@nestjs/common';
+import { CreateOfertaGrupoMateriaDto } from './dto/create-oferta_grupo_materia.dto';
+import { UpdateOfertaGrupoMateriaDto } from './dto/update-oferta_grupo_materia.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { OfertaGrupoMateria } from '@prisma/client';
+
+@Injectable()
+export class OfertaGrupoMateriasService {
+  constructor(private readonly prismaService: PrismaService) {}
+
+  async create(
+    createOfertaGrupoMateriaDto: CreateOfertaGrupoMateriaDto,
+  ): Promise<OfertaGrupoMateria> {
+    const createdOfertaGrupoMateria =
+      await this.prismaService.ofertaGrupoMateria.create({
+        data: createOfertaGrupoMateriaDto,
+      });
+
+    if (!createdOfertaGrupoMateria) {
+      throw new NotAcceptableException(
+        'No se pudo crear la oferta grupo materia',
+      );
+    }
+
+    return createdOfertaGrupoMateria;
+  }
+
+  async findAll(): Promise<OfertaGrupoMateria[]> {
+    return this.prismaService.ofertaGrupoMateria.findMany({
+      where: { estaActivo: true },
+      include: {
+        GrupoMateria: { select: { grupo: true } },
+        MaestroDeOferta: { select: { id: true } },
+      },
+    });
+  }
+
+  async findOne(id: string): Promise<OfertaGrupoMateria | null> {
+    const foundOfertaGrupoMateria =
+      await this.prismaService.ofertaGrupoMateria.findUnique({
+        where: { id, estaActivo: true },
+      });
+
+    if (!foundOfertaGrupoMateria) {
+      throw new NotFoundException('Oferta grupo materia no encontrada');
+    }
+
+    return foundOfertaGrupoMateria;
+  }
+
+  async update(
+    id: string,
+    updateOfertaGrupoMateriaDto: UpdateOfertaGrupoMateriaDto,
+  ): Promise<OfertaGrupoMateria> {
+    const updatedOfertaGrupoMateria =
+      await this.prismaService.ofertaGrupoMateria.update({
+        where: { id },
+        data: updateOfertaGrupoMateriaDto,
+      });
+
+    if (!updatedOfertaGrupoMateria) {
+      throw new NotFoundException('Oferta grupo materia no encontrada');
+    }
+
+    return updatedOfertaGrupoMateria;
+  }
+
+  async remove(id: string): Promise<OfertaGrupoMateria> {
+    const deletedOfertaGrupoMateria =
+      await this.prismaService.ofertaGrupoMateria.update({
+        where: { id },
+        data: { estaActivo: false },
+      });
+
+    if (!deletedOfertaGrupoMateria) {
+      throw new NotFoundException('Oferta grupo materia no encontrada');
+    }
+
+    return deletedOfertaGrupoMateria;
+  }
+}

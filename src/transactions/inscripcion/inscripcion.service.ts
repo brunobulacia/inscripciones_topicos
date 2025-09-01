@@ -10,7 +10,7 @@ import { GrupoMateria, Prisma } from '@prisma/client';
 export class InscripcionService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async inscripcion(createInscripcionDto: CreateInscripcionDto) {
+  /* async inscripcion(createInscripcionDto: CreateInscripcionDto) {
     return await this.prismaService.$transaction(async (prisma) => {
       //VALIDANDO SI EL REGISTRO LE PERTENECE A ALGUN ESTUDIANTE
       const foundStudent = await prisma.estudiante.findUnique({
@@ -329,5 +329,5 @@ export class InscripcionService {
         'No se pudieron crear las materias en la boleta',
       );
     }
-  }
+  } */
 }
