@@ -44,6 +44,14 @@ export class AuthService {
         },
       });
 
+      // Crear la entrada en maestroDeOferta para el estudiante inscrito en el periodo actual
+      await this.prismaService.maestroDeOferta.create({
+        data: {
+          estudianteId: user.id,
+          periodoId: 'e98c933f-d706-4bdc-bdf8-755ea315b0eb',
+        },
+      });
+
       // 5. Retornar el estudiante actualizado
       const updatedUser = await this.prismaService.estudiante.findUnique({
         where: { id: user.id },

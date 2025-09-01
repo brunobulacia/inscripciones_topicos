@@ -639,6 +639,14 @@ const modulos = [{ id: '4e9e7f2d-6d8a-41d3-9d2a-b5a1b6b60236', numero: 236 }];
 
 const gestiones = [{ id: '7a7c4c88-9c2a-4e74-9c1b-aaaaaaaaaaaa', año: '2025' }];
 
+const periodos = [
+  {
+    id: 'e98c933f-d706-4bdc-bdf8-755ea315b0eb',
+    numero: 1,
+    gestionId: '7a7c4c88-9c2a-4e74-9c1b-aaaaaaaaaaaa',
+  },
+];
+
 // Datos estáticos
 const carreras = [
   {
@@ -675,20 +683,69 @@ const niveles = [
   },
 ];
 
-niveles.push();
+const docentes = [
+  {
+    id: '2c74dfdf-bbdf-4763-b11a-6f45fff9cef3',
+    nombre: 'Miguel Jesus',
+    apellido_paterno: 'Peinado',
+    apellido_materno: 'Pereira',
+    ci: '12345678',
+    registro: '5555',
+    email: 'peinado@icloud.com',
+    telefono: '8785465',
+    password: 'PEINADO6464',
+  },
+  {
+    id: '783748cb-1e4e-409a-9b41-8ed2705d9e20',
+    nombre: 'Braulio',
+    apellido_paterno: 'Caceres',
+    apellido_materno: 'Chacón',
+    ci: '78965412',
+    registro: '4444',
+    email: 'braulio@icloud.com',
+    telefono: '2454521',
+    password: 'BRAULIO6464',
+  },
+];
+
+const gruposMateria = [
+  {
+    id: '49ba5aaa-8217-4ea7-a6ef-ab55aaaed941',
+    grupo: 'SC',
+    inscritos: 0,
+    cupos: 20,
+    materiaId: '2cde4bc0-093e-4c8b-89aa-29e6915cf96b',
+    docenteId: '2c74dfdf-bbdf-4763-b11a-6f45fff9cef3',
+    periodoId: 'e98c933f-d706-4bdc-bdf8-755ea315b0eb',
+  },
+  {
+    id: '1d23b410-00b3-4a85-aafe-4ae7a3139151',
+    grupo: 'SA',
+    inscritos: 0,
+    cupos: 20,
+    materiaId: '6b46118c-53be-4b3b-925f-b7a010f54b1b',
+    docenteId: '783748cb-1e4e-409a-9b41-8ed2705d9e20',
+    periodoId: 'e98c933f-d706-4bdc-bdf8-755ea315b0eb',
+  },
+];
 
 async function main() {
   //VACIAR LA BASE DE DATOS ANTES
   await prisma.prerequisito.deleteMany({});
+  await prisma.grupoMateria.deleteMany({});
   await prisma.materia.deleteMany({});
   await prisma.nivel.deleteMany({});
   await prisma.planDeEstudio.deleteMany({});
   await prisma.modulo.deleteMany({});
   await prisma.carrera.deleteMany({});
+  await prisma.periodo.deleteMany({});
   await prisma.gestion.deleteMany({});
+  await prisma.docente.deleteMany({});
 
   // Insertar datos base primero (sin dependencias)
+  await prisma.docente.createMany({ data: docentes });
   await prisma.gestion.createMany({ data: gestiones });
+  await prisma.periodo.createMany({ data: periodos });
   await prisma.carrera.createMany({ data: carreras });
   await prisma.modulo.createMany({ data: modulos });
 
@@ -704,6 +761,7 @@ async function main() {
   // Finalmente insertar prerequisitos (depende de materias)
   await prisma.prerequisito.createMany({ data: prerequisitos });
 
+  await prisma.grupoMateria.createMany({ data: gruposMateria });
   console.log('Seed completado.');
 }
 

@@ -24,6 +24,8 @@ import { AulaGrupoMateriasModule } from './aula_grupo_materias/aula_grupo_materi
 //PARA MANEJAR REDIS Y BULLMQ PARA LAS COLAS
 import { BullModule } from '@nestjs/bullmq';
 import { InscripcionModule } from './transactions/inscripcion/inscripcion.module';
+import { MaestroDeOfertaModule } from './maestro_de_oferta/maestro_de_oferta.module';
+import { OfertaGmModule } from './oferta_gm/oferta_gm.module';
 
 @Module({
   imports: [
@@ -57,6 +59,10 @@ import { InscripcionModule } from './transactions/inscripcion/inscripcion.module
         port: 6379,
       },
     }),
+
+    MaestroDeOfertaModule,
+
+    OfertaGmModule,
   ],
   controllers: [],
   /* providers: [
