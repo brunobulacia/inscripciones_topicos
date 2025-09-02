@@ -8,6 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { CarrerasService } from './carreras.service';
+import { CarreraQueueService } from './services/carrera-queue.service';
 import type { CreateCarreraDto } from './dto/create-carrera.dto';
 import type { UpdateCarreraDto } from './dto/update-carrera.dto';
 import {
@@ -23,10 +24,13 @@ import {
 @ApiBearerAuth()
 @Controller('carreras')
 export class CarrerasController {
-  constructor(private readonly carrerasService: CarrerasService) {}
+  constructor(
+    private readonly carrerasService: CarrerasService,
+    private readonly carreraQueueService: CarreraQueueService,
+  ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Crear nueva carrera' })
+  @ApiOperation({ summary: 'Crear nueva carrera (asíncrono)' })
   @ApiBody({
     description: 'Datos de la carrera a crear',
     schema: {
@@ -38,66 +42,82 @@ export class CarrerasController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Carrera creada exitosamente' })
+  @ApiResponse({
+    status: 202,
+    description: 'Job encolado exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', example: 'job-uuid' },
+        message: { type: 'string', example: 'Job encolado para crear carrera' },
+      },
+    },
+  })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 409, description: 'La carrera ya existe' })
-  create(@Body() createCarreraDto: CreateCarreraDto) {
-    return this.carrerasService.create(createCarreraDto);
+  async create(@Body() createCarreraDto: CreateCarreraDto) {
+    const result =
+      await this.carreraQueueService.createCarrera(createCarreraDto);
+    return {
+      ...result,
+      message: 'Job encolado para crear carrera',
+    };
   }
 
   @Get()
-  @ApiOperation({ summary: 'Obtener todas las carreras' })
+  @ApiOperation({ summary: 'Obtener todas las carreras (asíncrono)' })
   @ApiResponse({
-    status: 200,
-    description: 'Lista de carreras',
+    status: 202,
+    description: 'Job encolado para obtener carreras',
     schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          codigo: { type: 'number' },
-          nombre: { type: 'string' },
-          estaActivo: { type: 'boolean' },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', example: 'job-uuid' },
+        message: {
+          type: 'string',
+          example: 'Job encolado para obtener carreras',
         },
       },
     },
   })
-  findAll() {
-    return this.carrerasService.findAll();
+  async findAll() {
+    const result = await this.carreraQueueService.findAllCarreras();
+    return {
+      ...result,
+      message: 'Job encolado para obtener carreras',
+    };
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener carrera por ID' })
+  @ApiOperation({ summary: 'Obtener carrera por ID (asíncrono)' })
   @ApiParam({
     name: 'id',
     description: 'ID de la carrera',
     example: 'uuid-example',
   })
   @ApiResponse({
-    status: 200,
-    description: 'Carrera encontrada',
+    status: 202,
+    description: 'Job encolado para obtener carrera',
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string' },
-        codigo: { type: 'number' },
-        nombre: { type: 'string' },
-        estaActivo: { type: 'boolean' },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
+        jobId: { type: 'string', example: 'job-uuid' },
+        message: {
+          type: 'string',
+          example: 'Job encolado para obtener carrera',
+        },
       },
     },
   })
-  @ApiResponse({ status: 404, description: 'Carrera no encontrada' })
-  findOne(@Param('id') id: string) {
-    return this.carrerasService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const result = await this.carreraQueueService.findOneCarrera({ id });
+    return {
+      ...result,
+      message: 'Job encolado para obtener carrera',
+    };
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar carrera' })
+  @ApiOperation({ summary: 'Actualizar carrera (asíncrono)' })
   @ApiParam({
     name: 'id',
     description: 'ID de la carrera',
@@ -114,23 +134,141 @@ export class CarrerasController {
       },
     },
   })
-  @ApiResponse({ status: 200, description: 'Carrera actualizada exitosamente' })
-  @ApiResponse({ status: 404, description: 'Carrera no encontrada' })
+  @ApiResponse({
+    status: 202,
+    description: 'Job encolado para actualizar carrera',
+    schema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', example: 'job-uuid' },
+        message: {
+          type: 'string',
+          example: 'Job encolado para actualizar carrera',
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  update(@Param('id') id: string, @Body() updateCarreraDto: UpdateCarreraDto) {
-    return this.carrerasService.update(id, updateCarreraDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateCarreraDto: UpdateCarreraDto,
+  ) {
+    const result = await this.carreraQueueService.updateCarrera({
+      id,
+      ...updateCarreraDto,
+    });
+    return {
+      ...result,
+      message: 'Job encolado para actualizar carrera',
+    };
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Eliminar carrera' })
+  @ApiOperation({ summary: 'Eliminar carrera (asíncrono)' })
   @ApiParam({
     name: 'id',
     description: 'ID de la carrera',
     example: 'uuid-example',
   })
-  @ApiResponse({ status: 200, description: 'Carrera eliminada exitosamente' })
-  @ApiResponse({ status: 404, description: 'Carrera no encontrada' })
-  remove(@Param('id') id: string) {
-    return this.carrerasService.remove(id);
+  @ApiResponse({
+    status: 202,
+    description: 'Job encolado para eliminar carrera',
+    schema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', example: 'job-uuid' },
+        message: {
+          type: 'string',
+          example: 'Job encolado para eliminar carrera',
+        },
+      },
+    },
+  })
+  async remove(@Param('id') id: string) {
+    const result = await this.carreraQueueService.deleteCarrera({ id });
+    return {
+      ...result,
+      message: 'Job encolado para eliminar carrera',
+    };
+  }
+
+  @Get('queue/stats')
+  @ApiOperation({ summary: 'Ver estadísticas de la cola' })
+  @ApiResponse({
+    status: 200,
+    description: 'Estadísticas de la cola de carreras',
+    schema: {
+      type: 'object',
+      properties: {
+        stats: {
+          type: 'object',
+          properties: {
+            waiting: { type: 'number', example: 5 },
+            active: { type: 'number', example: 2 },
+            completed: { type: 'number', example: 15 },
+            failed: { type: 'number', example: 1 },
+          },
+        },
+        jobs: {
+          type: 'object',
+          properties: {
+            waiting: { type: 'array', items: { type: 'object' } },
+            active: { type: 'array', items: { type: 'object' } },
+            recent_completed: { type: 'array', items: { type: 'object' } },
+            recent_failed: { type: 'array', items: { type: 'object' } },
+          },
+        },
+      },
+    },
+  })
+  async getQueueStats() {
+    return await this.carreraQueueService.getQueueStats();
+  }
+
+  @Post('queue/clear')
+  @ApiOperation({ summary: 'Limpiar la cola' })
+  @ApiResponse({
+    status: 200,
+    description: 'Cola limpiada exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Cola limpiada exitosamente' },
+      },
+    },
+  })
+  async clearQueue() {
+    return await this.carreraQueueService.clearQueue();
+  }
+
+  // Endpoint para consultar el estado de un job
+  @Get('jobs/:jobId/status')
+  @ApiOperation({ summary: 'Consultar estado de un job' })
+  @ApiParam({
+    name: 'jobId',
+    description: 'ID del job',
+    example: 'job-uuid',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Estado del job',
+    schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['waiting', 'processing', 'completed', 'failed', 'not_found'],
+          example: 'completed',
+        },
+        data: {
+          type: 'object',
+          description: 'Resultado del job (si está completado)',
+        },
+        error: { type: 'string', description: 'Error del job (si falló)' },
+      },
+    },
+  })
+  async getJobStatus(@Param('jobId') jobId: string) {
+    return await this.carreraQueueService.getJobResult(jobId);
   }
 }
