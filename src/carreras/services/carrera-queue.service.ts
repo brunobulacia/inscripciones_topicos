@@ -136,7 +136,12 @@ export class CarreraQueueService {
           id: job.id,
           name: job.name,
           error: job.failedReason,
-          failedAt: job.failedOn ? new Date(job.failedOn).toISOString() : null,
+          failedAt:
+            job.failedReason && job.finishedOn
+              ? new Date(job.finishedOn).toISOString()
+              : job.processedOn
+                ? new Date(job.processedOn).toISOString()
+                : new Date().toISOString(),
         })),
       },
     };

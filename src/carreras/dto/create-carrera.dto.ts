@@ -1,3 +1,6 @@
 import { Carrera } from '@prisma/client';
 
-export type CreateCarreraDto = Omit<Carrera, 'id' | 'createdAt' | 'updatedAt'>;
+export type CreateCarreraDto = Omit<
+  Carrera,
+  'id' | 'createdAt' | 'updatedAt' | 'estaActivo'
+>;

@@ -15,8 +15,8 @@ datasource db {
 
 model Carrera {
   id            String          @id @default(uuid())
-  codigo        Int
-  nombre        String
+  codigo        Int             @unique
+  nombre        String          @unique
   planDeEstudio PlanDeEstudio[]
   estaActivo    Boolean         @default(true)
   updatedAt     DateTime        @updatedAt

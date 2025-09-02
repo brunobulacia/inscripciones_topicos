@@ -11,7 +11,6 @@ export enum CarreraJobType {
 export interface CreateCarreraJobData {
   codigo: number;
   nombre: string;
-  estaActivo: boolean;
 }
 
 export interface FindOneCarreraJobData {
