@@ -14,7 +14,7 @@ import {
 } from '../types/carrera-job.types';
 
 @Injectable()
-@Processor(QUEUE_NAMES.CARRERAS)
+@Processor(QUEUE_NAMES.INSCRIPCIONES)
 export class CarreraProcessor extends WorkerHost {
   private readonly logger = new Logger(CarreraProcessor.name);
 

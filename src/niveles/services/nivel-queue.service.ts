@@ -3,77 +3,130 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
 import {
-  CarreraJobType,
-  CreateCarreraJobData,
-  FindOneCarreraJobData,
-  UpdateCarreraJobData,
-  DeleteCarreraJobData,
-} from '../types/carrera-job.types';
+  NivelJobType,
+  CreateNivelJobData,
+  FindOneNivelJobData,
+  UpdateNivelJobData,
+  DeleteNivelJobData,
+} from '../types/nivel-job.types';
 import { QUEUE_NAMES, JobStatusResponse } from '../../common/types/queue.types';
 
 @Injectable()
-export class CarreraQueueService {
+export class NivelQueueService {
   constructor(
-    @InjectQueue(QUEUE_NAMES.INSCRIPCIONES) private carreraQueue: Queue,
+    @InjectQueue(QUEUE_NAMES.INSCRIPCIONES) private nivelQueue: Queue,
   ) {}
 
-  async createCarrera(data: CreateCarreraJobData) {
+  async createNivel(data: CreateNivelJobData) {
     const jobId = uuidv4();
-    const job = await this.carreraQueue.add(CarreraJobType.CREATE, data, {
+    const job = await this.nivelQueue.add(NivelJobType.CREATE, data, {
       jobId,
       removeOnComplete: 100,
       removeOnFail: 50,
-      delay: 10000, //PARA SIMULAR RETRASO NOMAS XD
+      delay: 10000, // Para simular retraso
     });
     return { jobId: job.id };
   }
 
-  async findAllCarreras() {
+  async findAllNiveles() {
     const jobId = uuidv4();
-    const job = await this.carreraQueue.add(CarreraJobType.FIND_ALL, null, {
+    const job = await this.nivelQueue.add(NivelJobType.FIND_ALL, null, {
       jobId,
       removeOnComplete: 100,
       removeOnFail: 50,
-      // delay: Math.floor(Math.random() * 500),
     });
     return { jobId: job.id };
   }
 
-  async findOneCarrera(data: FindOneCarreraJobData) {
+  async findOneNivel(data: FindOneNivelJobData) {
     const jobId = uuidv4();
-    const job = await this.carreraQueue.add(CarreraJobType.FIND_ONE, data, {
+    const job = await this.nivelQueue.add(NivelJobType.FIND_ONE, data, {
       jobId,
       removeOnComplete: 100,
       removeOnFail: 50,
-      // delay: Math.floor(Math.random() * 500),
     });
     return { jobId: job.id };
   }
 
-  async updateCarrera(data: UpdateCarreraJobData) {
+  async updateNivel(data: UpdateNivelJobData) {
     const jobId = uuidv4();
-    const job = await this.carreraQueue.add(CarreraJobType.UPDATE, data, {
+    const job = await this.nivelQueue.add(NivelJobType.UPDATE, data, {
       jobId,
       removeOnComplete: 100,
       removeOnFail: 50,
-      // delay: Math.floor(Math.random() * 500),
+      delay: 10000, // Para simular retraso
     });
     return { jobId: job.id };
   }
 
-  async deleteCarrera(data: DeleteCarreraJobData) {
+  async deleteNivel(data: DeleteNivelJobData) {
     const jobId = uuidv4();
-    const job = await this.carreraQueue.add(CarreraJobType.DELETE, data, {
+    const job = await this.nivelQueue.add(NivelJobType.DELETE, data, {
       jobId,
       removeOnComplete: 100,
       removeOnFail: 50,
-      // delay: Math.floor(Math.random() * 500),
+      delay: 10000, // Para simular retraso
     });
     return { jobId: job.id };
+  }
+
+  async getJobStatus(jobId: string): Promise<JobStatusResponse> {
+    try {
+      const job = await this.nivelQueue.getJob(jobId);
+
+      if (!job) {
+        return {
+          status: 'not_found',
+          message: 'Job not found',
+        };
+      }
+
+      const state = await job.getState();
+
+      switch (state) {
+        case 'waiting':
+          return {
+            status: 'waiting',
+            message: 'Job is waiting to be processed',
+          };
+
+        case 'active':
+          return {
+            status: 'processing',
+            message: 'Job is currently being processed',
+          };
+
+        case 'completed':
+          return {
+            status: 'completed',
+            data: job.returnvalue,
+            message: 'Job completed successfully',
+          };
+
+        case 'failed':
+          return {
+            status: 'failed',
+            error: job.failedReason,
+            message: 'Job failed to process',
+          };
+
+        default:
+          return {
+            status: 'not_found',
+            message: 'Unknown job state',
+          };
+      }
+    } catch (error) {
+      return {
+        status: 'failed',
+        error: error.message,
+        message: 'Error retrieving job status',
+      };
+    }
   }
 
   async getJobResult(jobId: string): Promise<JobStatusResponse> {
-    const job = await this.carreraQueue.getJob(jobId);
+    const job = await this.nivelQueue.getJob(jobId);
 
     if (!job) {
       return { status: 'not_found', message: 'Job not found' };
@@ -101,10 +154,10 @@ export class CarreraQueueService {
   }
 
   async getQueueStats() {
-    const waiting = await this.carreraQueue.getWaiting();
-    const active = await this.carreraQueue.getActive();
-    const completed = await this.carreraQueue.getCompleted();
-    const failed = await this.carreraQueue.getFailed();
+    const waiting = await this.nivelQueue.getWaiting();
+    const active = await this.nivelQueue.getActive();
+    const completed = await this.nivelQueue.getCompleted();
+    const failed = await this.nivelQueue.getFailed();
 
     return {
       stats: {
@@ -155,7 +208,7 @@ export class CarreraQueueService {
   }
 
   async clearQueue() {
-    await this.carreraQueue.obliterate({ force: true });
+    await this.nivelQueue.obliterate({ force: true });
     return { message: 'Cola limpiada exitosamente' };
   }
 }

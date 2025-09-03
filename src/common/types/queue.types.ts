@@ -1,9 +1,6 @@
 export const QUEUE_NAMES = {
-  CARRERAS: 'carreras',
-  ESTUDIANTES: 'estudiantes',
-  DOCENTES: 'docentes',
-  MATERIAS: 'materias',
-  // Agregar más colas según sea necesario
+  INSCRIPCIONES: 'InscripcionesQueue',
+  // Cola centralizada para todos los servicios
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];

@@ -11,7 +11,7 @@ import { QUEUE_NAMES } from '../common/types/queue.types';
   imports: [
     PrismaModule,
     BullModule.registerQueue({
-      name: QUEUE_NAMES.CARRERAS,
+      name: QUEUE_NAMES.INSCRIPCIONES,
     }),
   ],
   controllers: [CarrerasController],
