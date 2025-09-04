@@ -8,6 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { ModulosService } from './modulos.service';
+import { ModuloQueueService } from './services/modulo-queue.service';
 import type { CreateModuloDto } from './dto/create-modulo.dto';
 import type { UpdateModuloDto } from './dto/update-modulo.dto';
 import {
@@ -23,7 +24,10 @@ import {
 @ApiBearerAuth()
 @Controller('modulos')
 export class ModulosController {
-  constructor(private readonly moduloService: ModulosService) {}
+  constructor(
+    private readonly modulosService: ModulosService,
+    private readonly moduloQueueService: ModuloQueueService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Crear nuevo módulo' })
@@ -39,8 +43,11 @@ export class ModulosController {
   })
   @ApiResponse({ status: 201, description: 'Módulo creado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  create(@Body() createModuloDto: CreateModuloDto) {
-    return this.moduloService.create(createModuloDto);
+  async create(@Body() createModuloDto: CreateModuloDto) {
+    const job = await this.moduloQueueService.enqueueCreateModulo({
+      numero: createModuloDto.numero,
+    });
+    return { message: 'Módulo encolado para creación', jobId: job.id };
   }
 
   @Get()
@@ -62,8 +69,9 @@ export class ModulosController {
       },
     },
   })
-  findAll() {
-    return this.moduloService.findAll();
+  async findAll() {
+    const job = await this.moduloQueueService.enqueueFindAllModulos();
+    return { message: 'Consulta de módulos encolada', jobId: job.id };
   }
 
   @Get(':id')
@@ -88,8 +96,9 @@ export class ModulosController {
     },
   })
   @ApiResponse({ status: 404, description: 'Módulo no encontrado' })
-  findOne(@Param('id') id: string) {
-    return this.moduloService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const job = await this.moduloQueueService.enqueueFindOneModulo({ id });
+    return { message: 'Consulta de módulo encolada', jobId: job.id };
   }
 
   @Patch(':id')
@@ -112,8 +121,15 @@ export class ModulosController {
   @ApiResponse({ status: 200, description: 'Módulo actualizado exitosamente' })
   @ApiResponse({ status: 404, description: 'Módulo no encontrado' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  update(@Param('id') id: string, @Body() updateModuloDto: UpdateModuloDto) {
-    return this.moduloService.update(id, updateModuloDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateModuloDto: UpdateModuloDto,
+  ) {
+    const job = await this.moduloQueueService.enqueueUpdateModulo({
+      id,
+      ...updateModuloDto,
+    });
+    return { message: 'Actualización de módulo encolada', jobId: job.id };
   }
 
   @Delete(':id')
@@ -125,7 +141,8 @@ export class ModulosController {
   })
   @ApiResponse({ status: 200, description: 'Módulo eliminado exitosamente' })
   @ApiResponse({ status: 404, description: 'Módulo no encontrado' })
-  remove(@Param('id') id: string) {
-    return this.moduloService.remove(id);
+  async remove(@Param('id') id: string) {
+    const job = await this.moduloQueueService.enqueueDeleteModulo({ id });
+    return { message: 'Eliminación de módulo encolada', jobId: job.id };
   }
 }

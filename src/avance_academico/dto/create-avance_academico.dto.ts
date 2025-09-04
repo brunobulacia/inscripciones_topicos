@@ -2,5 +2,5 @@ import { AvanceAcademico } from '@prisma/client';
 
 export type CreateAvanceAcademicoDto = Omit<
   AvanceAcademico,
-  'id' | 'updatedAt' | 'createdAt'
+  'id' | 'updatedAt' | 'createdAt' | 'estaActivo'
 >;

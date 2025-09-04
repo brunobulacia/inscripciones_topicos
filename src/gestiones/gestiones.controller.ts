@@ -8,6 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { GestionesService } from './gestiones.service';
+import { GestionQueueService } from './services/gestion-queue.service';
 import type { CreateGestionDto } from './dto/create-gestion.dto';
 import type { UpdateGestionDto } from './dto/update-gestion.dto';
 import {
@@ -23,7 +24,10 @@ import {
 @ApiBearerAuth()
 @Controller('gestiones')
 export class GestionesController {
-  constructor(private readonly gestionService: GestionesService) {}
+  constructor(
+    private readonly gestionService: GestionesService,
+    private readonly gestionQueueService: GestionQueueService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Crear nueva gestión' })
@@ -39,8 +43,12 @@ export class GestionesController {
   })
   @ApiResponse({ status: 201, description: 'Gestión creada exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  create(@Body() createGestionDto: CreateGestionDto) {
-    return this.gestionService.create(createGestionDto);
+  async create(@Body() createGestionDto: CreateGestionDto) {
+    const job = await this.gestionQueueService.enqueueCreateGestion({
+      año: createGestionDto.año,
+      estaActivo: createGestionDto.estaActivo,
+    });
+    return { message: 'Gestión encolada para creación', jobId: job.id };
   }
 
   @Get()
@@ -62,8 +70,9 @@ export class GestionesController {
       },
     },
   })
-  findAll() {
-    return this.gestionService.findAll();
+  async findAll() {
+    const job = await this.gestionQueueService.enqueueFindAllGestiones();
+    return { message: 'Consulta de gestiones encolada', jobId: job.id };
   }
 
   @Get(':id')
@@ -88,8 +97,9 @@ export class GestionesController {
     },
   })
   @ApiResponse({ status: 404, description: 'Gestión no encontrada' })
-  findOne(@Param('id') id: string) {
-    return this.gestionService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const job = await this.gestionQueueService.enqueueFindOneGestion({ id });
+    return { message: 'Consulta de gestión encolada', jobId: job.id };
   }
 
   @Patch(':id')
@@ -112,8 +122,15 @@ export class GestionesController {
   @ApiResponse({ status: 200, description: 'Gestión actualizada exitosamente' })
   @ApiResponse({ status: 404, description: 'Gestión no encontrada' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  update(@Param('id') id: string, @Body() updateGestionDto: UpdateGestionDto) {
-    return this.gestionService.update(id, updateGestionDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateGestionDto: UpdateGestionDto,
+  ) {
+    const job = await this.gestionQueueService.enqueueUpdateGestion({
+      id,
+      ...updateGestionDto,
+    });
+    return { message: 'Actualización de gestión encolada', jobId: job.id };
   }
 
   @Delete(':id')
@@ -125,7 +142,8 @@ export class GestionesController {
   })
   @ApiResponse({ status: 200, description: 'Gestión eliminada exitosamente' })
   @ApiResponse({ status: 404, description: 'Gestión no encontrada' })
-  remove(@Param('id') id: string) {
-    return this.gestionService.remove(id);
+  async remove(@Param('id') id: string) {
+    const job = await this.gestionQueueService.enqueueDeleteGestion({ id });
+    return { message: 'Eliminación de gestión encolada', jobId: job.id };
   }
 }

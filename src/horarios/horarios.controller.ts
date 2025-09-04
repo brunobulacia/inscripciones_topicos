@@ -8,8 +8,8 @@ import {
   Delete,
 } from '@nestjs/common';
 import { HorariosService } from './horarios.service';
-import { CreateHorarioDto } from './dto/create-horario.dto';
-import { UpdateHorarioDto } from './dto/update-horario.dto';
+import type { CreateHorarioDto } from './dto/create-horario.dto';
+import type { UpdateHorarioDto } from './dto/update-horario.dto';
 import {
   ApiTags,
   ApiOperation,

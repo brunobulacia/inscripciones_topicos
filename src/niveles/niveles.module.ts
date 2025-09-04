@@ -6,6 +6,13 @@ import { NivelQueueService } from './services/nivel-queue.service';
 import { NivelProcessor } from './processors/nivel.processor';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { QUEUE_NAMES } from '../common/types/queue.types';
+import {
+  CreateNivelHandler,
+  FindAllNivelesHandler,
+  FindOneNivelHandler,
+  UpdateNivelHandler,
+  DeleteNivelHandler,
+} from './handlers/nivel.handlers';
 
 @Module({
   imports: [
@@ -15,7 +22,16 @@ import { QUEUE_NAMES } from '../common/types/queue.types';
     }),
   ],
   controllers: [NivelesController],
-  providers: [NivelesService, NivelQueueService, NivelProcessor],
+  providers: [
+    NivelesService,
+    NivelQueueService,
+    NivelProcessor,
+    CreateNivelHandler,
+    FindAllNivelesHandler,
+    FindOneNivelHandler,
+    UpdateNivelHandler,
+    DeleteNivelHandler,
+  ],
   exports: [NivelesService, NivelQueueService],
 })
 export class NivelesModule {}

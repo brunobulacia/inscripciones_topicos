@@ -29,9 +29,11 @@ import { DetalleInsOfertasModule } from './detalle_ins_ofertas/detalle_ins_ofert
 import { MaestroDeOfertasModule } from './maestro_de_ofertas/maestro_de_ofertas.module';
 import { OfertaGrupoMateriasModule } from './oferta_grupo_materias/oferta_grupo_materias.module';
 import { QUEUE_NAMES } from './common/types/queue.types';
+import { QueueCommonModule } from './common/queue-common.module';
 
 @Module({
   imports: [
+    QueueCommonModule, // Módulo global para los servicios de queue
     AuthModule,
     CarrerasModule,
     PlanesDeEstudioModule,

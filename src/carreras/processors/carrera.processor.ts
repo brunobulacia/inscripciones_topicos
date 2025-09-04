@@ -1,110 +1,58 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Job } from 'bullmq';
-import { Injectable, Logger } from '@nestjs/common';
-import { CarrerasService } from '../carreras.service';
+import { Processor } from '@nestjs/bullmq';
+import { Injectable } from '@nestjs/common';
 import { QUEUE_NAMES } from '../../common/types/queue.types';
+import { BaseQueueProcessor } from '../../common/processors/base-queue.processor';
+import { QueueJobSerializer } from '../../common/services/queue-job-serializer.service';
+import { QueueJobHandlerRegistry } from '../../common/services/queue-job-handler-registry.service';
 import {
-  CarreraJobType,
-  CarreraJobData,
-  CreateCarreraJobData,
-  FindOneCarreraJobData,
-  UpdateCarreraJobData,
-  DeleteCarreraJobData,
-  CarreraJobResult,
-} from '../types/carrera-job.types';
+  CreateCarreraHandler,
+  FindAllCarrerasHandler,
+  FindOneCarreraHandler,
+  UpdateCarreraHandler,
+  DeleteCarreraHandler,
+} from '../handlers/carrera.handlers';
 
 @Injectable()
 @Processor(QUEUE_NAMES.INSCRIPCIONES)
-export class CarreraProcessor extends WorkerHost {
-  private readonly logger = new Logger(CarreraProcessor.name);
-
-  constructor(private readonly carrerasService: CarrerasService) {
-    super();
+export class CarreraProcessor extends BaseQueueProcessor {
+  constructor(
+    jobSerializer: QueueJobSerializer,
+    handlerRegistry: QueueJobHandlerRegistry,
+    private readonly createCarreraHandler: CreateCarreraHandler,
+    private readonly findAllCarrerasHandler: FindAllCarrerasHandler,
+    private readonly findOneCarreraHandler: FindOneCarreraHandler,
+    private readonly updateCarreraHandler: UpdateCarreraHandler,
+    private readonly deleteCarreraHandler: DeleteCarreraHandler,
+  ) {
+    super(jobSerializer, handlerRegistry);
   }
 
-  async process(job: Job<CarreraJobData>): Promise<CarreraJobResult> {
-    this.logger.log(`Processing job ${job.id} of type ${job.name}`);
-
-    switch (job.name) {
-      case CarreraJobType.CREATE:
-        return await this.handleCreateCarrera(job.data as CreateCarreraJobData);
-
-      case CarreraJobType.FIND_ALL:
-        return await this.handleFindAllCarreras();
-
-      case CarreraJobType.FIND_ONE:
-        return await this.handleFindOneCarrera(
-          job.data as FindOneCarreraJobData,
-        );
-
-      case CarreraJobType.UPDATE:
-        return await this.handleUpdateCarrera(job.data as UpdateCarreraJobData);
-
-      case CarreraJobType.DELETE:
-        return await this.handleDeleteCarrera(job.data as DeleteCarreraJobData);
-
-      default:
-        throw new Error(`Unknown job type: ${job.name}`);
-    }
-  }
-
-  private async handleCreateCarrera(
-    data: CreateCarreraJobData,
-  ): Promise<CarreraJobResult> {
-    const createDto = {
-      codigo: data.codigo,
-      nombre: data.nombre,
-    };
-    const carrera = await this.carrerasService.create(createDto);
-    return {
-      success: true,
-      data: carrera,
-    };
-  }
-
-  private async handleFindAllCarreras(): Promise<CarreraJobResult> {
-    const carreras = await this.carrerasService.findAll();
-    return {
-      success: true,
-      data: carreras,
-    };
-  }
-
-  private async handleFindOneCarrera(
-    data: FindOneCarreraJobData,
-  ): Promise<CarreraJobResult> {
-    const carrera = await this.carrerasService.findOne(data.id);
-    return {
-      success: true,
-      data: carrera,
-    };
-  }
-
-  private async handleUpdateCarrera(
-    data: UpdateCarreraJobData,
-  ): Promise<CarreraJobResult> {
-    const { id, ...updateData } = data;
-    const updateDto = {
-      ...(updateData.codigo !== undefined && { codigo: updateData.codigo }),
-      ...(updateData.nombre !== undefined && { nombre: updateData.nombre }),
-      ...(updateData.estaActivo !== undefined && {
-        estaActivo: updateData.estaActivo,
-      }),
-    };
-    const carrera = await this.carrerasService.update(id, updateDto);
-    return {
-      success: true,
-      data: carrera,
-    };
-  }
-
-  private async handleDeleteCarrera(
-    data: DeleteCarreraJobData,
-  ): Promise<CarreraJobResult> {
-    const carrera = await this.carrerasService.remove(data.id);
-    return {
-      success: true,
-      data: carrera,
-    };
+  registerHandlers(): void {
+    // Registrar todos los handlers para la entidad "carrera"
+    this.handlerRegistry.register(
+      'carrera',
+      'create',
+      this.createCarreraHandler,
+    );
+    this.handlerRegistry.register(
+      'carrera',
+      'find_all',
+      this.findAllCarrerasHandler,
+    );
+    this.handlerRegistry.register(
+      'carrera',
+      'find_one',
+      this.findOneCarreraHandler,
+    );
+    this.handlerRegistry.register(
+      'carrera',
+      'update',
+      this.updateCarreraHandler,
+    );
+    this.handlerRegistry.register(
+      'carrera',
+      'delete',
+      this.deleteCarreraHandler,
+    );
   }
 }

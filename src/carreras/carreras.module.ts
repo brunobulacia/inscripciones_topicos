@@ -6,6 +6,13 @@ import { CarreraQueueService } from './services/carrera-queue.service';
 import { CarreraProcessor } from './processors/carrera.processor';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { QUEUE_NAMES } from '../common/types/queue.types';
+import {
+  CreateCarreraHandler,
+  FindAllCarrerasHandler,
+  FindOneCarreraHandler,
+  UpdateCarreraHandler,
+  DeleteCarreraHandler,
+} from './handlers/carrera.handlers';
 
 @Module({
   imports: [
@@ -15,7 +22,16 @@ import { QUEUE_NAMES } from '../common/types/queue.types';
     }),
   ],
   controllers: [CarrerasController],
-  providers: [CarrerasService, CarreraQueueService, CarreraProcessor],
+  providers: [
+    CarrerasService,
+    CarreraQueueService,
+    CarreraProcessor,
+    CreateCarreraHandler,
+    FindAllCarrerasHandler,
+    FindOneCarreraHandler,
+    UpdateCarreraHandler,
+    DeleteCarreraHandler,
+  ],
   exports: [CarrerasService, CarreraQueueService],
 })
 export class CarrerasModule {}
