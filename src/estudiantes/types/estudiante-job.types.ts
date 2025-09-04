@@ -16,7 +16,6 @@ export interface CreateEstudianteJobData {
   matricula: string;
   password: string;
   ppac?: number;
-  avanceAcademicoId: string;
   estaActivo?: boolean;
 }
 

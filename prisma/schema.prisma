@@ -113,8 +113,7 @@ model Estudiante {
   FichaInscripcion  FichaInscripcion[]
   BoletaInscripcion BoletaInscripcion[]
   MaestroDeOferta   MaestroDeOferta[]
-  avanceAcademicoId String              @unique
-  avanceAcademico   AvanceAcademico     @relation(fields: [avanceAcademicoId], references: [id])
+  avanceAcademico   AvanceAcademico?
 }
 
 model Materia {
@@ -165,7 +164,8 @@ model AvanceAcademico {
   estaActivo        Boolean             @default(true)
   updatedAt         DateTime            @updatedAt
   createdAt         DateTime            @default(now())
-  estudiante        Estudiante?
+  estudianteId      String              @unique
+  estudiante        Estudiante          @relation(fields: [estudianteId], references: [id])
 }
 
 model Modulo {

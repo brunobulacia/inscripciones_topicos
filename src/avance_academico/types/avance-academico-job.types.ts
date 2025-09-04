@@ -7,7 +7,7 @@ export enum AvanceAcademicoJobType {
 }
 
 export interface CreateAvanceAcademicoJobData {
-  estaActivo?: boolean;
+  estudianteId: string;
 }
 
 export interface FindAllAvanceAcademicoJobData {
@@ -22,6 +22,7 @@ export interface FindOneAvanceAcademicoJobData {
 export interface UpdateAvanceAcademicoJobData {
   id: string;
   estaActivo?: boolean;
+  estudianteId?: string;
 }
 
 export interface DeleteAvanceAcademicoJobData {

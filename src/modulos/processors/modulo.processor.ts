@@ -27,7 +27,6 @@ export class ModuloProcessor extends BaseQueueProcessor {
   }
 
   registerHandlers() {
-    // Registrar todos los handlers para 'modulo'
     this.handlerRegistry.register('modulo', 'create', this.createModuloHandler);
     this.handlerRegistry.register(
       'modulo',

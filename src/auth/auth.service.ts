@@ -24,19 +24,11 @@ export class AuthService {
       // 2. Crear el avance academico y asociar el estudiante
       const avanceAcademico = await this.prismaService.avanceAcademico.create({
         data: {
-          estudiante: {
-            connect: { id: user.id },
-          },
+          estudianteId: user.id,
         },
       });
 
-      // 3. Actualizar el estudiante con el avanceAcademicoId
-      await this.prismaService.estudiante.update({
-        where: { id: user.id },
-        data: { avanceAcademicoId: avanceAcademico.id },
-      });
-
-      // 4. Crear la boleta de inscripcion con el avanceAcademicoId correcto
+      // 3. Crear la boleta de inscripcion con el avanceAcademicoId correcto
       await this.prismaService.boletaInscripcion.create({
         data: {
           estudianteId: user.id,
@@ -44,7 +36,7 @@ export class AuthService {
         },
       });
 
-      // Crear la entrada en maestroDeOferta para el estudiante inscrito en el periodo actual
+      //4. Crear la entrada en maestroDeOferta para el estudiante inscrito en el periodo actual
       await this.prismaService.maestroDeOferta.create({
         data: {
           estudianteId: user.id,

@@ -26,7 +26,6 @@ export class CreateEstudianteHandler
         matricula: data.matricula,
         password: data.password,
         ppac: data.ppac ?? 0,
-        avanceAcademicoId: data.avanceAcademicoId,
         estaActivo: data.estaActivo ?? true,
       };
       return await this.estudiantesService.create(createDto);

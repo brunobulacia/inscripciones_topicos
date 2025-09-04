@@ -729,6 +729,12 @@ const gruposMateria = [
   },
 ];
 
+export const Aulas = [...Array(37).keys()].map((i) => ({
+  numero: i + 10,
+  capacidad: 80,
+  moduloId: '4e9e7f2d-6d8a-41d3-9d2a-b5a1b6b60236',
+}));
+
 async function main() {
   //VACIAR LA BASE DE DATOS ANTES
   await prisma.prerequisito.deleteMany({});
@@ -736,6 +742,7 @@ async function main() {
   await prisma.materia.deleteMany({});
   await prisma.nivel.deleteMany({});
   await prisma.planDeEstudio.deleteMany({});
+  await prisma.aula.deleteMany({}); // Delete aula before modulo due to foreign key constraint
   await prisma.modulo.deleteMany({});
   await prisma.carrera.deleteMany({});
   await prisma.periodo.deleteMany({});
@@ -748,6 +755,7 @@ async function main() {
   await prisma.periodo.createMany({ data: periodos });
   await prisma.carrera.createMany({ data: carreras });
   await prisma.modulo.createMany({ data: modulos });
+  await prisma.aula.createMany({ data: Aulas });
 
   // Insertar planes de estudio (depende de carreras)
   await prisma.planDeEstudio.createMany({ data: planesDeEstudio });

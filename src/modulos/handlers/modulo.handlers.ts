@@ -20,13 +20,11 @@ export class CreateModuloHandler implements JobHandler<CreateModuloJobData> {
       };
       return await this.modulosService.create(createDto);
     } catch (error) {
-      // Si es un error de constraint único, lanzarlo como error real para que falle el job
       if (error.message?.includes('Unique constraint failed')) {
         throw new Error(
           `Error de validación: Ya existe un módulo con el número ${data.numero}`,
         );
       }
-      // Otros errores se propagan como están
       throw error;
     }
   }
