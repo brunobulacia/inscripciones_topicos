@@ -14,6 +14,10 @@ export class QueueJobSerializer implements JobSerializer {
   private readonly ENTITY_OPERATION_PATTERN =
     /^(.+)_(create|find_all|find_one|update|delete)$/;
 
+  // Patrón para el formato entity.operation (con punto)
+  private readonly ENTITY_DOT_OPERATION_PATTERN =
+    /^(.+)\.(create|find_all|find_one|update|delete)$/;
+
   serialize(jobName: string, data: any): SerializedJob {
     const match = jobName.match(this.JOB_NAME_PATTERN);
 
@@ -48,7 +52,18 @@ export class QueueJobSerializer implements JobSerializer {
    * Extrae información del nombre del job para routing
    */
   parseJobName(jobName: string): { entity: string; operation: string } {
-    // Primero intentamos el nuevo patrón entity_operation
+    // Primero intentamos el patrón entity.operation (con punto)
+    const entityDotOpMatch = jobName.match(this.ENTITY_DOT_OPERATION_PATTERN);
+
+    if (entityDotOpMatch) {
+      const [, entityName, operation] = entityDotOpMatch;
+      return {
+        entity: this.convertToSingular(entityName.toLowerCase()),
+        operation: operation.toLowerCase(),
+      };
+    }
+
+    // Luego intentamos el patrón entity_operation (con guión bajo)
     const entityOpMatch = jobName.match(this.ENTITY_OPERATION_PATTERN);
 
     if (entityOpMatch) {
@@ -64,7 +79,7 @@ export class QueueJobSerializer implements JobSerializer {
 
     if (!match) {
       throw new Error(
-        `Invalid job name format: ${jobName}. Expected formats: 'entity_operation' or 'OPERATION_ENTITY'`,
+        `Invalid job name format: ${jobName}. Expected formats: 'entity.operation', 'entity_operation' or 'OPERATION_ENTITY'`,
       );
     }
 
@@ -84,7 +99,7 @@ export class QueueJobSerializer implements JobSerializer {
     const singularMap: Record<string, string> = {
       carreras: 'carrera',
       niveles: 'nivel',
-      materias: 'materia',
+      materia: 'materia',
       estudiantes: 'estudiante',
       docentes: 'docente',
       gestiones: 'gestion',
@@ -96,7 +111,14 @@ export class QueueJobSerializer implements JobSerializer {
       boleta_inscripcion: 'boletainscripcion',
       ficha_inscripcion: 'fichainscripcion',
       boleta_grupo_materia: 'boletagrupomateria',
-      // Agregar más mappings según necesidad
+      detalle_inscripcion: 'detalleinscripcion',
+      detalle_ins_oferta: 'detalleinsoferta',
+      grupo_materia: 'grupomateria',
+      oferta_grupo_materia: 'ofertagrupomateria',
+      maestro_de_oferta: 'maestrodeoferta',
+      aula_grupo_materia: 'aulagrupomateria',
+      horario: 'horario',
+      prerequisito: 'prerequisito',
     };
 
     return singularMap[entityName] || entityName;

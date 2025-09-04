@@ -18,13 +18,14 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
+import { MaestroDeOfertaQueueService } from './services/maestro-de-oferta-queue.service';
 
 @ApiTags('maestro-de-ofertas')
 @ApiBearerAuth()
 @Controller('maestro-de-ofertas')
 export class MaestroDeOfertasController {
   constructor(
-    private readonly maestroDeOfertasService: MaestroDeOfertasService,
+    private readonly MaestroDeOfertaQueueService: MaestroDeOfertaQueueService,
   ) {}
 
   @Post()
@@ -45,7 +46,9 @@ export class MaestroDeOfertasController {
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   create(@Body() createMaestroDeOfertaDto: CreateMaestroDeOfertaDto) {
-    return this.maestroDeOfertasService.create(createMaestroDeOfertaDto);
+    return this.MaestroDeOfertaQueueService.createMaestroDeOferta(
+      createMaestroDeOfertaDto,
+    );
   }
 
   @Get()
@@ -69,7 +72,7 @@ export class MaestroDeOfertasController {
     },
   })
   findAll() {
-    return this.maestroDeOfertasService.findAll();
+    return this.MaestroDeOfertaQueueService.findAllMaestroDeOfertas();
   }
 
   @Get(':id')
@@ -96,7 +99,7 @@ export class MaestroDeOfertasController {
   })
   @ApiResponse({ status: 404, description: 'Maestro de oferta no encontrado' })
   findOne(@Param('id') id: string) {
-    return this.maestroDeOfertasService.findOne(id);
+    return this.MaestroDeOfertaQueueService.findOneMaestroDeOferta(id);
   }
 
   @Patch(':id')
@@ -126,7 +129,10 @@ export class MaestroDeOfertasController {
     @Param('id') id: string,
     @Body() updateMaestroDeOfertaDto: UpdateMaestroDeOfertaDto,
   ) {
-    return this.maestroDeOfertasService.update(id, updateMaestroDeOfertaDto);
+    return this.MaestroDeOfertaQueueService.updateMaestroDeOferta(
+      id,
+      updateMaestroDeOfertaDto,
+    );
   }
 
   @Delete(':id')
@@ -142,6 +148,6 @@ export class MaestroDeOfertasController {
   })
   @ApiResponse({ status: 404, description: 'Maestro de oferta no encontrado' })
   remove(@Param('id') id: string) {
-    return this.maestroDeOfertasService.remove(id);
+    return this.MaestroDeOfertaQueueService.deleteMaestroDeOferta(id);
   }
 }

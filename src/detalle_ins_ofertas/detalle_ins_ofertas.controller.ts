@@ -6,8 +6,8 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
-import { DetalleInsOfertasService } from './detalle_ins_ofertas.service';
 import type { CreateDetalleInsOfertaDto } from './dto/create-detalle_ins_oferta.dto';
 import type { UpdateDetalleInsOfertaDto } from './dto/update-detalle_ins_oferta.dto';
 import {
@@ -17,18 +17,20 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
+import { DetalleInsOfertaQueueService } from './services/detalle-ins-oferta-queue.service';
 
 @ApiTags('detalle-ins-ofertas')
 @ApiBearerAuth()
 @Controller('detalle-ins-ofertas')
 export class DetalleInsOfertasController {
   constructor(
-    private readonly detalleInsOfertasService: DetalleInsOfertasService,
+    private readonly detalleInsOfertaQueueService: DetalleInsOfertaQueueService,
   ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Crear nuevo detalle ins oferta' })
+  @ApiOperation({ summary: 'Crear nuevo detalle ins oferta (encolar)' })
   @ApiBody({
     description: 'Datos del detalle ins oferta a crear',
     schema: {
@@ -48,72 +50,66 @@ export class DetalleInsOfertasController {
   })
   @ApiResponse({
     status: 201,
-    description: 'Detalle ins oferta creado exitosamente',
+    description: 'Detalle ins oferta encolado para creación',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  create(@Body() createDetalleInsOfertaDto: CreateDetalleInsOfertaDto) {
-    return this.detalleInsOfertasService.create(createDetalleInsOfertaDto);
+  async create(@Body() createDetalleInsOfertaDto: CreateDetalleInsOfertaDto) {
+    return this.detalleInsOfertaQueueService.createDetalleInsOferta(
+      createDetalleInsOfertaDto,
+    );
   }
 
   @Get()
-  @ApiOperation({ summary: 'Obtener todos los detalles ins ofertas' })
+  @ApiOperation({ summary: 'Obtener todos los detalles ins ofertas (encolar)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
     status: 200,
-    description: 'Lista de detalles ins ofertas',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          detalleInscripcionId: { type: 'string' },
-          ofertaGrupoMateriaId: { type: 'string' },
-          estado: { type: 'string' },
-          estaActivo: { type: 'boolean' },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
-        },
-      },
-    },
-  })
-  findAll() {
-    return this.detalleInsOfertasService.findAll();
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Obtener detalle ins oferta por ID' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID del detalle ins oferta',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Detalle ins oferta encontrado',
+    description: 'Búsqueda de detalles ins ofertas encolada',
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string' },
-        detalleInscripcionId: { type: 'string' },
-        ofertaGrupoMateriaId: { type: 'string' },
-        estado: { type: 'string' },
-        estaActivo: { type: 'boolean' },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
+        jobId: { type: 'string' },
+        message: { type: 'string' },
+      },
+    },
+  })
+  async findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+    return this.detalleInsOfertaQueueService.findAllDetalleInsOfertas({
+      page,
+      limit,
+    });
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener detalle ins oferta por ID (encolar)' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del detalle ins oferta',
+    example: '1',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Búsqueda de detalle ins oferta encolada',
+    schema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string' },
+        message: { type: 'string' },
       },
     },
   })
   @ApiResponse({ status: 404, description: 'Detalle ins oferta no encontrado' })
-  findOne(@Param('id') id: string) {
-    return this.detalleInsOfertasService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    return this.detalleInsOfertaQueueService.findOneDetalleInsOferta(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar detalle ins oferta' })
+  @ApiOperation({ summary: 'Actualizar detalle ins oferta (encolar)' })
   @ApiParam({
     name: 'id',
     description: 'ID del detalle ins oferta',
-    example: 'uuid-example',
+    example: '1',
   })
   @ApiBody({
     description: 'Datos a actualizar del detalle ins oferta',
@@ -134,30 +130,33 @@ export class DetalleInsOfertasController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Detalle ins oferta actualizado exitosamente',
+    description: 'Detalle ins oferta encolado para actualización',
   })
   @ApiResponse({ status: 404, description: 'Detalle ins oferta no encontrado' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateDetalleInsOfertaDto: UpdateDetalleInsOfertaDto,
   ) {
-    return this.detalleInsOfertasService.update(id, updateDetalleInsOfertaDto);
+    return this.detalleInsOfertaQueueService.updateDetalleInsOferta(
+      id,
+      updateDetalleInsOfertaDto,
+    );
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Eliminar detalle ins oferta' })
+  @ApiOperation({ summary: 'Eliminar detalle ins oferta (encolar)' })
   @ApiParam({
     name: 'id',
     description: 'ID del detalle ins oferta',
-    example: 'uuid-example',
+    example: '1',
   })
   @ApiResponse({
     status: 200,
-    description: 'Detalle ins oferta eliminado exitosamente',
+    description: 'Detalle ins oferta encolado para eliminación',
   })
   @ApiResponse({ status: 404, description: 'Detalle ins oferta no encontrado' })
-  remove(@Param('id') id: string) {
-    return this.detalleInsOfertasService.remove(id);
+  async remove(@Param('id') id: string) {
+    return this.detalleInsOfertaQueueService.deleteDetalleInsOferta(id);
   }
 }

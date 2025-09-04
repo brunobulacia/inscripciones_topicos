@@ -6,8 +6,9 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
-import { PrerequisitosService } from './prerequisitos.service';
+import { PrerequisitQueueService } from './services/prerequisito-queue.service';
 import type { CreatePrerequisitoDto } from './dto/create-prerequisito.dto';
 import type { UpdatePrerequisitoDto } from './dto/update-prerequisito.dto';
 import {
@@ -17,13 +18,16 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 
 @ApiTags('prerequisitos')
 @ApiBearerAuth()
 @Controller('prerequisitos')
 export class PrerequisitosController {
-  constructor(private readonly prerequisitosService: PrerequisitosService) {}
+  constructor(
+    private readonly prerequisitQueueService: PrerequisitQueueService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Crear nuevo prerequisito' })
@@ -34,39 +38,50 @@ export class PrerequisitosController {
       properties: {
         siglaMateria: { type: 'string', example: 'uuid-materia' },
         siglaPrerequisito: { type: 'string', example: 'uuid-prerequisito' },
-        esActivo: { type: 'boolean', example: true },
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Prerequisito creado exitosamente' })
+  @ApiResponse({
+    status: 201,
+    description: 'Trabajo de creación de prerequisito encolado exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', example: 'uuid-job-id' },
+      },
+    },
+  })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 409, description: 'El prerequisito ya existe' })
   create(@Body() createPrerequisitoDto: CreatePrerequisitoDto) {
-    return this.prerequisitosService.create(createPrerequisitoDto);
+    return this.prerequisitQueueService.create(createPrerequisitoDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Obtener todos los prerequisitos' })
+  @ApiQuery({
+    name: 'skip',
+    required: false,
+    type: Number,
+    description: 'Número de registros a omitir',
+  })
+  @ApiQuery({
+    name: 'take',
+    required: false,
+    type: Number,
+    description: 'Número de registros a tomar',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Lista de prerequisitos',
+    description: 'Trabajo de consulta de prerequisitos encolado exitosamente',
     schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          siglaMateria: { type: 'string' },
-          siglaPrerequisito: { type: 'string' },
-          esActivo: { type: 'boolean' },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
-        },
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', example: 'uuid-job-id' },
       },
     },
   })
-  findAll() {
-    return this.prerequisitosService.findAll();
+  async findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+    return this.prerequisitQueueService.findAll({ page, limit });
   }
 
   @Get(':id')
@@ -78,22 +93,17 @@ export class PrerequisitosController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Prerequisito encontrado',
+    description: 'Trabajo de consulta de prerequisito encolado exitosamente',
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string' },
-        siglaMateria: { type: 'string' },
-        siglaPrerequisito: { type: 'string' },
-        esActivo: { type: 'boolean' },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
+        jobId: { type: 'string', example: 'uuid-job-id' },
       },
     },
   })
   @ApiResponse({ status: 404, description: 'Prerequisito no encontrado' })
   findOne(@Param('id') id: string) {
-    return this.prerequisitosService.findOne(id);
+    return this.prerequisitQueueService.findOne({ id });
   }
 
   @Patch(':id')
@@ -116,7 +126,14 @@ export class PrerequisitosController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Prerequisito actualizado exitosamente',
+    description:
+      'Trabajo de actualización de prerequisito encolado exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', example: 'uuid-job-id' },
+      },
+    },
   })
   @ApiResponse({ status: 404, description: 'Prerequisito no encontrado' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
@@ -124,7 +141,10 @@ export class PrerequisitosController {
     @Param('id') id: string,
     @Body() updatePrerequisitoDto: UpdatePrerequisitoDto,
   ) {
-    return this.prerequisitosService.update(id, updatePrerequisitoDto);
+    return this.prerequisitQueueService.update({
+      id,
+      ...updatePrerequisitoDto,
+    });
   }
 
   @Delete(':id')
@@ -136,10 +156,16 @@ export class PrerequisitosController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Prerequisito eliminado exitosamente',
+    description: 'Trabajo de eliminación de prerequisito encolado exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', example: 'uuid-job-id' },
+      },
+    },
   })
   @ApiResponse({ status: 404, description: 'Prerequisito no encontrado' })
   remove(@Param('id') id: string) {
-    return this.prerequisitosService.remove(id);
+    return this.prerequisitQueueService.delete({ id });
   }
 }

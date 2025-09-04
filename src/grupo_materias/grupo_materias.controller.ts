@@ -6,8 +6,8 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
-import { GrupoMateriasService } from './grupo_materias.service';
 import type { CreateGrupoMateriaDto } from './dto/create-grupo_materia.dto';
 import type { UpdateGrupoMateriaDto } from './dto/update-grupo_materia.dto';
 import {
@@ -17,26 +17,30 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
+import { GrupoMateriaQueueService } from './services/grupo-materia-queue.service';
 
 @ApiTags('grupo-materias')
 @ApiBearerAuth()
 @Controller('grupo-materias')
 export class GrupoMateriasController {
-  constructor(private readonly grupoMateriasService: GrupoMateriasService) {}
+  constructor(
+    private readonly grupoMateriaQueueService: GrupoMateriaQueueService,
+  ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Crear nuevo grupo de materia' })
+  @ApiOperation({ summary: 'Crear nuevo grupo de materia (encolar)' })
   @ApiBody({
     description: 'Datos del grupo de materia a crear',
     schema: {
       type: 'object',
       properties: {
-        nombre: { type: 'string', example: 'Grupo A' },
+        grupo: { type: 'string', example: 'A' },
+        inscritos: { type: 'number', example: 0 },
+        cupos: { type: 'number', example: 20 },
         materiaId: { type: 'string', example: 'uuid-materia' },
         docenteId: { type: 'string', example: 'uuid-docente' },
-        detalleInscripcionId: { type: 'string', example: 'uuid-detalle' },
-        aulaGrupoMateriaId: { type: 'string', example: 'uuid-aula-grupo' },
         periodoId: { type: 'string', example: 'uuid-periodo' },
         estaActivo: { type: 'boolean', example: true },
       },
@@ -44,43 +48,39 @@ export class GrupoMateriasController {
   })
   @ApiResponse({
     status: 201,
-    description: 'Grupo de materia creado exitosamente',
+    description: 'Grupo de materia encolado para creación',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  create(@Body() createGrupoMateriaDto: CreateGrupoMateriaDto) {
-    return this.grupoMateriasService.create(createGrupoMateriaDto);
+  async create(@Body() createGrupoMateriaDto: CreateGrupoMateriaDto) {
+    return this.grupoMateriaQueueService.createGrupoMateria(
+      createGrupoMateriaDto,
+    );
   }
 
   @Get()
-  @ApiOperation({ summary: 'Obtener todos los grupos de materias' })
+  @ApiOperation({ summary: 'Obtener todos los grupos de materias (encolar)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
     status: 200,
-    description: 'Lista de grupos de materias',
+    description: 'Búsqueda de grupos de materias encolada',
     schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          nombre: { type: 'string' },
-          materiaId: { type: 'string' },
-          docenteId: { type: 'string' },
-          detalleInscripcionId: { type: 'string' },
-          aulaGrupoMateriaId: { type: 'string' },
-          periodoId: { type: 'string' },
-          estaActivo: { type: 'boolean' },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
-        },
+      type: 'object',
+      properties: {
+        jobId: { type: 'string' },
+        message: { type: 'string' },
       },
     },
   })
-  findAll() {
-    return this.grupoMateriasService.findAll();
+  async findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+    return this.grupoMateriaQueueService.findAllGrupoMaterias({
+      page,
+      limit,
+    });
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener grupo de materia por ID' })
+  @ApiOperation({ summary: 'Obtener grupo de materia por ID (encolar)' })
   @ApiParam({
     name: 'id',
     description: 'ID del grupo de materia',
@@ -88,30 +88,22 @@ export class GrupoMateriasController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Grupo de materia encontrado',
+    description: 'Búsqueda de grupo de materia encolada',
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string' },
-        nombre: { type: 'string' },
-        materiaId: { type: 'string' },
-        docenteId: { type: 'string' },
-        detalleInscripcionId: { type: 'string' },
-        aulaGrupoMateriaId: { type: 'string' },
-        periodoId: { type: 'string' },
-        estaActivo: { type: 'boolean' },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
+        jobId: { type: 'string' },
+        message: { type: 'string' },
       },
     },
   })
   @ApiResponse({ status: 404, description: 'Grupo de materia no encontrado' })
-  findOne(@Param('id') id: string) {
-    return this.grupoMateriasService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    return this.grupoMateriaQueueService.findOneGrupoMateria(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar grupo de materia' })
+  @ApiOperation({ summary: 'Actualizar grupo de materia (encolar)' })
   @ApiParam({
     name: 'id',
     description: 'ID del grupo de materia',
@@ -122,11 +114,11 @@ export class GrupoMateriasController {
     schema: {
       type: 'object',
       properties: {
-        nombre: { type: 'string', example: 'Grupo A' },
+        grupo: { type: 'string', example: 'B' },
+        inscritos: { type: 'number', example: 5 },
+        cupos: { type: 'number', example: 25 },
         materiaId: { type: 'string', example: 'uuid-materia' },
         docenteId: { type: 'string', example: 'uuid-docente' },
-        detalleInscripcionId: { type: 'string', example: 'uuid-detalle' },
-        aulaGrupoMateriaId: { type: 'string', example: 'uuid-aula-grupo' },
         periodoId: { type: 'string', example: 'uuid-periodo' },
         estaActivo: { type: 'boolean', example: true },
       },
@@ -134,19 +126,22 @@ export class GrupoMateriasController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Grupo de materia actualizado exitosamente',
+    description: 'Grupo de materia encolado para actualización',
   })
   @ApiResponse({ status: 404, description: 'Grupo de materia no encontrado' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateGrupoMateriaDto: UpdateGrupoMateriaDto,
   ) {
-    return this.grupoMateriasService.update(id, updateGrupoMateriaDto);
+    return this.grupoMateriaQueueService.updateGrupoMateria(
+      id,
+      updateGrupoMateriaDto,
+    );
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Eliminar grupo de materia' })
+  @ApiOperation({ summary: 'Eliminar grupo de materia (encolar)' })
   @ApiParam({
     name: 'id',
     description: 'ID del grupo de materia',
@@ -154,10 +149,10 @@ export class GrupoMateriasController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Grupo de materia eliminado exitosamente',
+    description: 'Grupo de materia encolado para eliminación',
   })
   @ApiResponse({ status: 404, description: 'Grupo de materia no encontrado' })
-  remove(@Param('id') id: string) {
-    return this.grupoMateriasService.remove(id);
+  async remove(@Param('id') id: string) {
+    return this.grupoMateriaQueueService.deleteGrupoMateria(id);
   }
 }

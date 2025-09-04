@@ -6,8 +6,8 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
-import { OfertaGrupoMateriasService } from './oferta_grupo_materias.service';
 import type { CreateOfertaGrupoMateriaDto } from './dto/create-oferta_grupo_materia.dto';
 import type { UpdateOfertaGrupoMateriaDto } from './dto/update-oferta_grupo_materia.dto';
 import {
@@ -17,18 +17,20 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
+import { OfertaGrupoMateriaQueueService } from './services/oferta-grupo-materia-queue.service';
 
 @ApiTags('oferta-grupo-materias')
 @ApiBearerAuth()
 @Controller('oferta-grupo-materias')
 export class OfertaGrupoMateriasController {
   constructor(
-    private readonly ofertaGrupoMateriasService: OfertaGrupoMateriasService,
+    private readonly ofertaGrupoMateriaQueueService: OfertaGrupoMateriaQueueService,
   ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Crear nueva oferta grupo materia' })
+  @ApiOperation({ summary: 'Crear nueva oferta grupo materia (encolar)' })
   @ApiBody({
     description: 'Datos de la oferta grupo materia a crear',
     schema: {
@@ -41,39 +43,43 @@ export class OfertaGrupoMateriasController {
   })
   @ApiResponse({
     status: 201,
-    description: 'Oferta grupo materia creada exitosamente',
+    description: 'Oferta grupo materia encolada para creación',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  create(@Body() createOfertaGrupoMateriaDto: CreateOfertaGrupoMateriaDto) {
-    return this.ofertaGrupoMateriasService.create(createOfertaGrupoMateriaDto);
+  async create(
+    @Body() createOfertaGrupoMateriaDto: CreateOfertaGrupoMateriaDto,
+  ) {
+    return this.ofertaGrupoMateriaQueueService.createOfertaGrupoMateria(
+      createOfertaGrupoMateriaDto,
+    );
   }
 
   @Get()
-  @ApiOperation({ summary: 'Obtener todas las ofertas grupo materias' })
+  @ApiOperation({
+    summary: 'Obtener todas las ofertas grupo materias (encolar)',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
     status: 200,
-    description: 'Lista de ofertas grupo materias',
+    description: 'Búsqueda de ofertas grupo materias encolada',
     schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          grupoMateriaId: { type: 'string' },
-          maestroDeOfertaId: { type: 'string' },
-          estaActivo: { type: 'boolean' },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
-        },
+      type: 'object',
+      properties: {
+        jobId: { type: 'string' },
+        message: { type: 'string' },
       },
     },
   })
-  findAll() {
-    return this.ofertaGrupoMateriasService.findAll();
+  async findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+    return this.ofertaGrupoMateriaQueueService.findAllOfertaGrupoMaterias({
+      page,
+      limit,
+    });
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener oferta grupo materia por ID' })
+  @ApiOperation({ summary: 'Obtener oferta grupo materia por ID (encolar)' })
   @ApiParam({
     name: 'id',
     description: 'ID de la oferta grupo materia',
@@ -81,16 +87,12 @@ export class OfertaGrupoMateriasController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Oferta grupo materia encontrada',
+    description: 'Búsqueda de oferta grupo materia encolada',
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string' },
-        grupoMateriaId: { type: 'string' },
-        maestroDeOfertaId: { type: 'string' },
-        estaActivo: { type: 'boolean' },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
+        jobId: { type: 'string' },
+        message: { type: 'string' },
       },
     },
   })
@@ -98,12 +100,12 @@ export class OfertaGrupoMateriasController {
     status: 404,
     description: 'Oferta grupo materia no encontrada',
   })
-  findOne(@Param('id') id: string) {
-    return this.ofertaGrupoMateriasService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    return this.ofertaGrupoMateriaQueueService.findOneOfertaGrupoMateria(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar oferta grupo materia' })
+  @ApiOperation({ summary: 'Actualizar oferta grupo materia (encolar)' })
   @ApiParam({
     name: 'id',
     description: 'ID de la oferta grupo materia',
@@ -121,25 +123,25 @@ export class OfertaGrupoMateriasController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Oferta grupo materia actualizada exitosamente',
+    description: 'Oferta grupo materia encolada para actualización',
   })
   @ApiResponse({
     status: 404,
     description: 'Oferta grupo materia no encontrada',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateOfertaGrupoMateriaDto: UpdateOfertaGrupoMateriaDto,
   ) {
-    return this.ofertaGrupoMateriasService.update(
+    return this.ofertaGrupoMateriaQueueService.updateOfertaGrupoMateria(
       id,
       updateOfertaGrupoMateriaDto,
     );
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Eliminar oferta grupo materia' })
+  @ApiOperation({ summary: 'Eliminar oferta grupo materia (encolar)' })
   @ApiParam({
     name: 'id',
     description: 'ID de la oferta grupo materia',
@@ -147,13 +149,13 @@ export class OfertaGrupoMateriasController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Oferta grupo materia eliminada exitosamente',
+    description: 'Oferta grupo materia encolada para eliminación',
   })
   @ApiResponse({
     status: 404,
     description: 'Oferta grupo materia no encontrada',
   })
-  remove(@Param('id') id: string) {
-    return this.ofertaGrupoMateriasService.remove(id);
+  async remove(@Param('id') id: string) {
+    return this.ofertaGrupoMateriaQueueService.deleteOfertaGrupoMateria(id);
   }
 }
