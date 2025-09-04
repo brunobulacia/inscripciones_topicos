@@ -8,6 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { PlanesDeEstudioService } from './planes_de_estudio.service';
+import { PlanDeEstudioQueueService } from './services/plan-de-estudio-queue.service';
 import type { CreatePlanDeEstudioDto } from './dto/create-planes_de_estudio.dto';
 import type { UpdatePlanDeEstudioDto } from './dto/update-planes_de_estudio.dto';
 import {
@@ -25,6 +26,7 @@ import {
 export class PlanesDeEstudioController {
   constructor(
     private readonly planesDeEstudioService: PlanesDeEstudioService,
+    private readonly planDeEstudioQueueService: PlanDeEstudioQueueService,
   ) {}
 
   @Post()
@@ -47,7 +49,9 @@ export class PlanesDeEstudioController {
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   @ApiResponse({ status: 409, description: 'El plan de estudio ya existe' })
   create(@Body() createPlanDeEstudioDto: CreatePlanDeEstudioDto) {
-    return this.planesDeEstudioService.create(createPlanDeEstudioDto);
+    return this.planDeEstudioQueueService.enqueueCreatePlanDeEstudio(
+      createPlanDeEstudioDto,
+    );
   }
 
   @Get()
@@ -71,7 +75,7 @@ export class PlanesDeEstudioController {
     },
   })
   findAll() {
-    return this.planesDeEstudioService.findAll();
+    return this.planDeEstudioQueueService.enqueueFindAllPlanesDeEstudio();
   }
 
   @Get(':id')
@@ -98,7 +102,7 @@ export class PlanesDeEstudioController {
   })
   @ApiResponse({ status: 404, description: 'Plan de estudio no encontrado' })
   findOne(@Param('id') id: string) {
-    return this.planesDeEstudioService.findOne(id);
+    return this.planDeEstudioQueueService.enqueueFindOnePlanDeEstudio({ id });
   }
 
   @Patch(':id')
@@ -129,7 +133,10 @@ export class PlanesDeEstudioController {
     @Param('id') id: string,
     @Body() updatePlanDeEstudioDto: UpdatePlanDeEstudioDto,
   ) {
-    return this.planesDeEstudioService.update(id, updatePlanDeEstudioDto);
+    return this.planDeEstudioQueueService.enqueueUpdatePlanDeEstudio({
+      id,
+      ...updatePlanDeEstudioDto,
+    });
   }
 
   @Delete(':id')
@@ -145,6 +152,6 @@ export class PlanesDeEstudioController {
   })
   @ApiResponse({ status: 404, description: 'Plan de estudio no encontrado' })
   remove(@Param('id') id: string) {
-    return this.planesDeEstudioService.remove(id);
+    return this.planDeEstudioQueueService.enqueueDeletePlanDeEstudio({ id });
   }
 }

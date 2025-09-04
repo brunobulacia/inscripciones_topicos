@@ -18,6 +18,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
+import { FichaInscripcionQueueService } from './services/ficha-inscripcion-queue.service';
 
 @ApiTags('fichas-inscripcion')
 @ApiBearerAuth()
@@ -25,6 +26,7 @@ import {
 export class FichasInscripcionController {
   constructor(
     private readonly fichaInscripcionService: FichasInscripcionService,
+    private readonly fichaInscripcionQueueService: FichaInscripcionQueueService,
   ) {}
 
   @Post()
@@ -49,7 +51,9 @@ export class FichasInscripcionController {
     description: 'La ficha de inscripción ya existe',
   })
   create(@Body() createFichaInscripcionDto: CreateFichaInscripcionDto) {
-    return this.fichaInscripcionService.create(createFichaInscripcionDto);
+    return this.fichaInscripcionQueueService.createFichaInscripcion(
+      createFichaInscripcionDto,
+    );
   }
 
   @Get()
@@ -72,7 +76,7 @@ export class FichasInscripcionController {
     },
   })
   findAll() {
-    return this.fichaInscripcionService.findAll();
+    return this.fichaInscripcionQueueService.findAllFichaInscripcion();
   }
 
   @Get(':id')
@@ -101,7 +105,7 @@ export class FichasInscripcionController {
     description: 'Ficha de inscripción no encontrada',
   })
   findOne(@Param('id') id: string) {
-    return this.fichaInscripcionService.findOne(id);
+    return this.fichaInscripcionQueueService.findOneFichaInscripcion(id);
   }
 
   @Patch(':id')
@@ -134,7 +138,10 @@ export class FichasInscripcionController {
     @Param('id') id: string,
     @Body() updateFichaInscripcionDto: UpdateFichaInscripcionDto,
   ) {
-    return this.fichaInscripcionService.update(id, updateFichaInscripcionDto);
+    return this.fichaInscripcionQueueService.updateFichaInscripcion(
+      id,
+      updateFichaInscripcionDto,
+    );
   }
 
   @Delete(':id')
@@ -153,6 +160,6 @@ export class FichasInscripcionController {
     description: 'Ficha de inscripción no encontrada',
   })
   remove(@Param('id') id: string) {
-    return this.fichaInscripcionService.remove(id);
+    return this.fichaInscripcionQueueService.deleteFichaInscripcion(id);
   }
 }

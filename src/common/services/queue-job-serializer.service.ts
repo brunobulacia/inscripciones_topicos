@@ -90,6 +90,12 @@ export class QueueJobSerializer implements JobSerializer {
       gestiones: 'gestion',
       periodos: 'periodo',
       modulos: 'modulo',
+      aulas: 'aula',
+      planes_de_estudio: 'plandeestudio',
+      avance_academico: 'avanceacademico',
+      boleta_inscripcion: 'boletainscripcion',
+      ficha_inscripcion: 'fichainscripcion',
+      boleta_grupo_materia: 'boletagrupomateria',
       // Agregar más mappings según necesidad
     };
 

@@ -18,6 +18,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
+import { BoletaInscripcionQueueService } from './services/boleta-inscripcion-queue.service';
 
 @ApiTags('boleta-inscripcion')
 @ApiBearerAuth()
@@ -25,6 +26,7 @@ import {
 export class BoletaInscripcionController {
   constructor(
     private readonly boletaInscripcionService: BoletaInscripcionService,
+    private readonly boletaInscripcionQueueService: BoletaInscripcionQueueService,
   ) {}
 
   @Post()
@@ -55,7 +57,9 @@ export class BoletaInscripcionController {
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   create(@Body() createBoletaInscripcionDto: CreateBoletaInscripcionDto) {
-    return this.boletaInscripcionService.create(createBoletaInscripcionDto);
+    return this.boletaInscripcionQueueService.createBoletaInscripcion(
+      createBoletaInscripcionDto,
+    );
   }
 
   @Get()
@@ -80,7 +84,7 @@ export class BoletaInscripcionController {
     },
   })
   findAll() {
-    return this.boletaInscripcionService.findAll();
+    return this.boletaInscripcionQueueService.findAllBoletaInscripcion();
   }
 
   @Get(':id')
@@ -111,7 +115,7 @@ export class BoletaInscripcionController {
     description: 'Boleta de inscripción no encontrada',
   })
   findOne(@Param('id') id: string) {
-    return this.boletaInscripcionService.findOne(id);
+    return this.boletaInscripcionQueueService.findOneBoletaInscripcion(id);
   }
 
   @Patch(':id')
@@ -154,7 +158,10 @@ export class BoletaInscripcionController {
     @Param('id') id: string,
     @Body() updateBoletaInscripcionDto: UpdateBoletaInscripcionDto,
   ) {
-    return this.boletaInscripcionService.update(id, updateBoletaInscripcionDto);
+    return this.boletaInscripcionQueueService.updateBoletaInscripcion(
+      id,
+      updateBoletaInscripcionDto,
+    );
   }
 
   @Delete(':id')
@@ -173,6 +180,6 @@ export class BoletaInscripcionController {
     description: 'Boleta de inscripción no encontrada',
   })
   remove(@Param('id') id: string) {
-    return this.boletaInscripcionService.remove(id);
+    return this.boletaInscripcionQueueService.deleteBoletaInscripcion(id);
   }
 }

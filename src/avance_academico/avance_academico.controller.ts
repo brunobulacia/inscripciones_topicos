@@ -18,13 +18,14 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
+import { AvanceAcademicoQueueService } from './services/avance-academico-queue.service';
 
 @ApiTags('avance-academico')
 @ApiBearerAuth()
 @Controller('avances-academicos')
 export class AvanceAcademicoController {
   constructor(
-    private readonly avanceAcademicoService: AvanceAcademicoService,
+    private readonly avanceAcademicoQueueService: AvanceAcademicoQueueService,
   ) {}
 
   @Post()
@@ -49,7 +50,9 @@ export class AvanceAcademicoController {
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   create(@Body() createAvanceAcademicoDto: CreateAvanceAcademicoDto) {
-    return this.avanceAcademicoService.create(createAvanceAcademicoDto);
+    return this.avanceAcademicoQueueService.createAvanceAcademico(
+      createAvanceAcademicoDto,
+    );
   }
 
   @Get()
@@ -72,7 +75,7 @@ export class AvanceAcademicoController {
     },
   })
   findAll() {
-    return this.avanceAcademicoService.findAll();
+    return this.avanceAcademicoQueueService.findAllAvanceAcademico();
   }
 
   @Get(':id')
@@ -98,7 +101,7 @@ export class AvanceAcademicoController {
   })
   @ApiResponse({ status: 404, description: 'Avance académico no encontrado' })
   findOne(@Param('id') id: string) {
-    return this.avanceAcademicoService.findOne(id);
+    return this.avanceAcademicoQueueService.findOneAvanceAcademico(id);
   }
 
   @Patch(':id')
@@ -132,7 +135,10 @@ export class AvanceAcademicoController {
     @Param('id') id: string,
     @Body() updateAvanceAcademicoDto: UpdateAvanceAcademicoDto,
   ) {
-    return this.avanceAcademicoService.update(id, updateAvanceAcademicoDto);
+    return this.avanceAcademicoQueueService.updateAvanceAcademico(
+      id,
+      updateAvanceAcademicoDto,
+    );
   }
 
   @Delete(':id')
@@ -148,6 +154,6 @@ export class AvanceAcademicoController {
   })
   @ApiResponse({ status: 404, description: 'Avance académico no encontrado' })
   remove(@Param('id') id: string) {
-    return this.avanceAcademicoService.remove(id);
+    return this.avanceAcademicoQueueService.deleteAvanceAcademico(id);
   }
 }

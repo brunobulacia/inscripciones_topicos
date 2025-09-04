@@ -20,12 +20,16 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { PaginationDto } from './dto/pagination.dto';
+import { EstudianteQueueService } from './services/estudiante-queue.service';
 
 @ApiTags('estudiantes')
 @ApiBearerAuth()
 @Controller('estudiantes')
 export class EstudiantesController {
-  constructor(private readonly estudiantesService: EstudiantesService) {}
+  constructor(
+    private readonly estudiantesService: EstudiantesService,
+    private readonly estudianteQueueService: EstudianteQueueService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Crear nuevo estudiante' })
@@ -51,7 +55,7 @@ export class EstudiantesController {
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   @ApiResponse({ status: 409, description: 'El estudiante ya existe' })
   create(@Body() createEstudianteDto: CreateEstudianteDto) {
-    return this.estudiantesService.create(createEstudianteDto);
+    return this.estudianteQueueService.createEstudiante(createEstudianteDto);
   }
 
   @Get()
@@ -81,7 +85,7 @@ export class EstudiantesController {
     },
   })
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.estudiantesService.findAll(paginationDto);
+    return this.estudianteQueueService.findAllEstudiantes(paginationDto);
   }
 
   @Get(':id')
@@ -114,7 +118,7 @@ export class EstudiantesController {
   })
   @ApiResponse({ status: 404, description: 'Estudiante no encontrado' })
   findOne(@Param('id') id: string) {
-    return this.estudiantesService.findOne(id);
+    return this.estudianteQueueService.findOneEstudiante(id);
   }
 
   @Patch(':id')
@@ -152,7 +156,10 @@ export class EstudiantesController {
     @Param('id') id: string,
     @Body() updateEstudianteDto: UpdateEstudianteDto,
   ) {
-    return this.estudiantesService.update(id, updateEstudianteDto);
+    return this.estudianteQueueService.updateEstudiante(
+      id,
+      updateEstudianteDto,
+    );
   }
 
   @Delete(':id')
@@ -168,6 +175,6 @@ export class EstudiantesController {
   })
   @ApiResponse({ status: 404, description: 'Estudiante no encontrado' })
   remove(@Param('id') id: string) {
-    return this.estudiantesService.remove(id);
+    return this.estudianteQueueService.deleteEstudiante(id);
   }
 }

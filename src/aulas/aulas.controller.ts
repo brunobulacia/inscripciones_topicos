@@ -8,6 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { AulasService } from './aulas.service';
+import { AulaQueueService } from './services/aula-queue.service';
 import type { CreateAulaDto } from './dto/create-aula.dto';
 import type { UpdateAulaDto } from './dto/update-aula.dto';
 import {
@@ -23,7 +24,10 @@ import {
 @ApiBearerAuth()
 @Controller('aulas')
 export class AulasController {
-  constructor(private readonly aulaService: AulasService) {}
+  constructor(
+    private readonly aulaService: AulasService,
+    private readonly aulaQueueService: AulaQueueService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Crear nueva aula' })
@@ -43,8 +47,9 @@ export class AulasController {
   @ApiResponse({ status: 201, description: 'Aula creada exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   @ApiResponse({ status: 409, description: 'El aula ya existe en este módulo' })
-  create(@Body() createAulaDto: CreateAulaDto) {
-    return this.aulaService.create(createAulaDto);
+  async create(@Body() createAulaDto: CreateAulaDto) {
+    const job = await this.aulaQueueService.addCreateAulaJob(createAulaDto);
+    return { jobId: job.id, message: 'Aula creation job queued' };
   }
 
   @Get()
@@ -69,8 +74,9 @@ export class AulasController {
       },
     },
   })
-  findAll() {
-    return this.aulaService.findAll();
+  async findAll() {
+    const job = await this.aulaQueueService.addFindAllAulasJob();
+    return { jobId: job.id, message: 'Find all aulas job queued' };
   }
 
   @Get(':id')
@@ -78,8 +84,9 @@ export class AulasController {
   @ApiParam({ name: 'id', description: 'ID del aula', example: 'uuid-example' })
   @ApiResponse({ status: 200, description: 'Aula encontrada' })
   @ApiResponse({ status: 404, description: 'Aula no encontrada' })
-  findOne(@Param('id') id: string) {
-    return this.aulaService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const job = await this.aulaQueueService.addFindOneAulaJob({ id });
+    return { jobId: job.id, message: 'Find one aula job queued' };
   }
 
   @Patch(':id')
@@ -101,8 +108,12 @@ export class AulasController {
   @ApiResponse({ status: 200, description: 'Aula actualizada exitosamente' })
   @ApiResponse({ status: 404, description: 'Aula no encontrada' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  update(@Param('id') id: string, @Body() updateAulaDto: UpdateAulaDto) {
-    return this.aulaService.update(id, updateAulaDto);
+  async update(@Param('id') id: string, @Body() updateAulaDto: UpdateAulaDto) {
+    const job = await this.aulaQueueService.addUpdateAulaJob({
+      id,
+      data: updateAulaDto,
+    });
+    return { jobId: job.id, message: 'Update aula job queued' };
   }
 
   @Delete(':id')
@@ -110,8 +121,9 @@ export class AulasController {
   @ApiParam({ name: 'id', description: 'ID del aula', example: 'uuid-example' })
   @ApiResponse({ status: 200, description: 'Aula eliminada exitosamente' })
   @ApiResponse({ status: 404, description: 'Aula no encontrada' })
-  remove(@Param('id') id: string) {
-    return this.aulaService.remove(id);
+  async remove(@Param('id') id: string) {
+    const job = await this.aulaQueueService.addDeleteAulaJob({ id });
+    return { jobId: job.id, message: 'Delete aula job queued' };
   }
 
   //SEEDER

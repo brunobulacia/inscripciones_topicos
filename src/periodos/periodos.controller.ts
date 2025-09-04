@@ -8,6 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { PeriodosService } from './periodos.service';
+import { PeriodoQueueService } from './services/periodo-queue.service';
 import type { CreatePeriodoDto } from './dto/create-periodo.dto';
 import type { UpdatePeriodoDto } from './dto/update-periodo.dto';
 import {
@@ -23,7 +24,10 @@ import {
 @ApiBearerAuth()
 @Controller('periodos')
 export class PeriodosController {
-  constructor(private readonly periodoService: PeriodosService) {}
+  constructor(
+    private readonly periodoService: PeriodosService,
+    private readonly periodoQueueService: PeriodoQueueService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Crear nuevo periodo' })
@@ -55,7 +59,7 @@ export class PeriodosController {
     description: 'El periodo ya existe para esta gestión',
   })
   create(@Body() createPeriodoDto: CreatePeriodoDto) {
-    return this.periodoService.create(createPeriodoDto);
+    return this.periodoQueueService.enqueueCreatePeriodo(createPeriodoDto);
   }
 
   @Get()
@@ -81,7 +85,7 @@ export class PeriodosController {
     },
   })
   findAll() {
-    return this.periodoService.findAll();
+    return this.periodoQueueService.enqueueFindAllPeriodos();
   }
 
   @Get(':id')
@@ -110,7 +114,7 @@ export class PeriodosController {
   })
   @ApiResponse({ status: 404, description: 'Periodo no encontrado' })
   findOne(@Param('id') id: string) {
-    return this.periodoService.findOne(id);
+    return this.periodoQueueService.enqueueFindOnePeriodo({ id });
   }
 
   @Patch(':id')
@@ -145,7 +149,10 @@ export class PeriodosController {
   @ApiResponse({ status: 404, description: 'Periodo no encontrado' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   update(@Param('id') id: string, @Body() updatePeriodoDto: UpdatePeriodoDto) {
-    return this.periodoService.update(id, updatePeriodoDto);
+    return this.periodoQueueService.enqueueUpdatePeriodo({
+      id,
+      ...updatePeriodoDto,
+    });
   }
 
   @Delete(':id')
@@ -158,6 +165,6 @@ export class PeriodosController {
   @ApiResponse({ status: 200, description: 'Periodo eliminado exitosamente' })
   @ApiResponse({ status: 404, description: 'Periodo no encontrado' })
   remove(@Param('id') id: string) {
-    return this.periodoService.remove(id);
+    return this.periodoQueueService.enqueueDeletePeriodo({ id });
   }
 }
