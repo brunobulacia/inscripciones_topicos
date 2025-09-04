@@ -10,6 +10,10 @@ export class QueueJobSerializer implements JobSerializer {
   private readonly JOB_NAME_PATTERN =
     /^(CREATE|FIND_ALL|FIND_ONE|UPDATE|DELETE)_(.+)$/;
 
+  // Nuevo patrón para el formato entity_operation que estamos usando
+  private readonly ENTITY_OPERATION_PATTERN =
+    /^(.+)_(create|find_all|find_one|update|delete)$/;
+
   serialize(jobName: string, data: any): SerializedJob {
     const match = jobName.match(this.JOB_NAME_PATTERN);
 
@@ -44,10 +48,24 @@ export class QueueJobSerializer implements JobSerializer {
    * Extrae información del nombre del job para routing
    */
   parseJobName(jobName: string): { entity: string; operation: string } {
+    // Primero intentamos el nuevo patrón entity_operation
+    const entityOpMatch = jobName.match(this.ENTITY_OPERATION_PATTERN);
+
+    if (entityOpMatch) {
+      const [, entityName, operation] = entityOpMatch;
+      return {
+        entity: this.convertToSingular(entityName.toLowerCase()),
+        operation: operation.toLowerCase(),
+      };
+    }
+
+    // Fallback al patrón original OPERATION_ENTITY
     const match = jobName.match(this.JOB_NAME_PATTERN);
 
     if (!match) {
-      throw new Error(`Invalid job name format: ${jobName}`);
+      throw new Error(
+        `Invalid job name format: ${jobName}. Expected formats: 'entity_operation' or 'OPERATION_ENTITY'`,
+      );
     }
 
     const [, operation, entityName] = match;

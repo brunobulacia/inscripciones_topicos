@@ -8,6 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { DocentesService } from './docentes.service';
+import { DocenteQueueService } from './services/docente-queue.service';
 import type { CreateDocenteDto } from './dto/create-docente.dto';
 import type { UpdateDocenteDto } from './dto/update-docente.dto';
 import {
@@ -23,7 +24,10 @@ import {
 @ApiBearerAuth()
 @Controller('docentes')
 export class DocentesController {
-  constructor(private readonly docentesService: DocentesService) {}
+  constructor(
+    private readonly docentesService: DocentesService,
+    private readonly docenteQueueService: DocenteQueueService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Crear nuevo docente' })
@@ -47,8 +51,10 @@ export class DocentesController {
   @ApiResponse({ status: 201, description: 'Docente creado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   @ApiResponse({ status: 409, description: 'El docente ya existe' })
-  create(@Body() createDocenteDto: CreateDocenteDto) {
-    return this.docentesService.create(createDocenteDto);
+  async create(@Body() createDocenteDto: CreateDocenteDto) {
+    const job =
+      await this.docenteQueueService.addCreateDocenteJob(createDocenteDto);
+    return { jobId: job.id, message: 'Docente creation job queued' };
   }
 
   @Get()
@@ -76,8 +82,9 @@ export class DocentesController {
       },
     },
   })
-  findAll() {
-    return this.docentesService.findAll();
+  async findAll() {
+    const job = await this.docenteQueueService.addFindAllDocentesJob();
+    return { jobId: job.id, message: 'Find all docentes job queued' };
   }
 
   @Get(':id')
@@ -108,8 +115,9 @@ export class DocentesController {
     },
   })
   @ApiResponse({ status: 404, description: 'Docente no encontrado' })
-  findOne(@Param('id') id: string) {
-    return this.docentesService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const job = await this.docenteQueueService.addFindOneDocenteJob({ id });
+    return { jobId: job.id, message: 'Find one docente job queued' };
   }
 
   @Patch(':id')
@@ -139,8 +147,15 @@ export class DocentesController {
   @ApiResponse({ status: 200, description: 'Docente actualizado exitosamente' })
   @ApiResponse({ status: 404, description: 'Docente no encontrado' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  update(@Param('id') id: string, @Body() updateDocenteDto: UpdateDocenteDto) {
-    return this.docentesService.update(id, updateDocenteDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateDocenteDto: UpdateDocenteDto,
+  ) {
+    const job = await this.docenteQueueService.addUpdateDocenteJob({
+      id,
+      data: updateDocenteDto,
+    });
+    return { jobId: job.id, message: 'Update docente job queued' };
   }
 
   @Delete(':id')
@@ -152,7 +167,8 @@ export class DocentesController {
   })
   @ApiResponse({ status: 200, description: 'Docente eliminado exitosamente' })
   @ApiResponse({ status: 404, description: 'Docente no encontrado' })
-  remove(@Param('id') id: string) {
-    return this.docentesService.remove(id);
+  async remove(@Param('id') id: string) {
+    const job = await this.docenteQueueService.addDeleteDocenteJob({ id });
+    return { jobId: job.id, message: 'Delete docente job queued' };
   }
 }
