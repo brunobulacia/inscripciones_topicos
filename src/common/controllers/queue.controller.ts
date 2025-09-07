@@ -136,4 +136,16 @@ export class QueueController {
     await this.inscripcionesQueue.obliterate({ force: true });
     return { message: 'Cola limpiada exitosamente' };
   }
+
+  @Post('stop')
+  async stopQueue() {
+    await this.inscripcionesQueue.pause();
+    return { message: 'Cola detenida exitosamente' };
+  }
+
+  @Post('start')
+  async startQueue() {
+    await this.inscripcionesQueue.resume();
+    return { message: 'Cola iniciada exitosamente' };
+  }
 }

@@ -30,10 +30,12 @@ import { MaestroDeOfertasModule } from './maestro_de_ofertas/maestro_de_ofertas.
 import { OfertaGrupoMateriasModule } from './oferta_grupo_materias/oferta_grupo_materias.module';
 import { QUEUE_NAMES } from './common/types/queue.types';
 import { QueueCommonModule } from './common/queue-common.module';
+import { BullMQDashboardModule } from './bullmq-dashboard/bullmq-dashboard.module';
 
 @Module({
   imports: [
     QueueCommonModule, // Módulo global para los servicios de queue
+    BullMQDashboardModule, // Dashboard de BullMQ
     AuthModule,
     CarrerasModule,
     PlanesDeEstudioModule,

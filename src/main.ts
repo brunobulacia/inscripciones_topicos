@@ -1,11 +1,21 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { BullMQDashboardService } from './bullmq-dashboard/bullmq-dashboard.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
   app.setGlobalPrefix('api');
+
+  // Configuración del Dashboard de BullMQ
+  const dashboardService = app.get(BullMQDashboardService);
+
+  // Aplicar middleware de autenticación (opcional)
+  const authMiddleware = dashboardService.createAuthMiddleware();
+
+  // Montar el dashboard en la ruta /admin/queues
+  app.use('/admin/queues', authMiddleware, dashboardService.getRouter());
 
   // Configuración de Swagger
   const config = new DocumentBuilder()
