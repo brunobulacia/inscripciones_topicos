@@ -8,6 +8,7 @@ import {
   UpdateAulaJobData,
   FindOneAulaJobData,
   DeleteAulaJobData,
+  AulasJobType,
 } from '../types/aula-job.types';
 
 @Injectable()
@@ -19,40 +20,45 @@ export class AulaQueueService {
 
   async addCreateAulaJob(data: CreateAulaJobData) {
     const jobId = uuidv4();
-    return await this.inscripcionesQueue.add('aulas_create', data, {
+    const job = await this.inscripcionesQueue.add(AulasJobType.CREATE, data, {
       jobId,
     });
+    return { jobId: job.id };
   }
 
   async addFindAllAulasJob() {
     const jobId = uuidv4();
-    return await this.inscripcionesQueue.add(
-      'aulas_find_all',
+    const job = await this.inscripcionesQueue.add(
+      AulasJobType.FIND_ALL,
       {},
       {
         jobId,
       },
     );
+    return { jobId: job.id };
   }
 
   async addFindOneAulaJob(data: FindOneAulaJobData) {
     const jobId = uuidv4();
-    return await this.inscripcionesQueue.add('aulas_find_one', data, {
+    const job = await this.inscripcionesQueue.add(AulasJobType.FIND_ONE, data, {
       jobId,
     });
+    return { jobId: job.id };
   }
 
   async addUpdateAulaJob(data: UpdateAulaJobData) {
     const jobId = uuidv4();
-    return await this.inscripcionesQueue.add('aulas_update', data, {
+    const job = await this.inscripcionesQueue.add(AulasJobType.UPDATE, data, {
       jobId,
     });
+    return { jobId: job.id };
   }
 
   async addDeleteAulaJob(data: DeleteAulaJobData) {
     const jobId = uuidv4();
-    return await this.inscripcionesQueue.add('aulas_delete', data, {
+    const job = await this.inscripcionesQueue.add(AulasJobType.DELETE, data, {
       jobId,
     });
+    return { jobId: job.id };
   }
 }

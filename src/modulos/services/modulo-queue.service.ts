@@ -19,32 +19,46 @@ export class ModuloQueueService {
   ) {}
 
   async enqueueCreateModulo(data: CreateModuloJobData) {
-    return await this.inscripcionesQueue.add(ModuloJobType.CREATE, data, {
-      jobId: uuidv4(),
+    const jobId = uuidv4();
+    const job = await this.inscripcionesQueue.add(ModuloJobType.CREATE, data, {
+      jobId,
     });
+    return { jobId: job.id };
   }
 
   async enqueueFindAllModulos() {
-    return await this.inscripcionesQueue.add(ModuloJobType.FIND_ALL, null, {
-      jobId: uuidv4(),
-    });
+    const job = await this.inscripcionesQueue.add(
+      ModuloJobType.FIND_ALL,
+      null,
+      {
+        jobId: uuidv4(),
+      },
+    );
+    return { jobId: job.id };
   }
 
   async enqueueFindOneModulo(data: FindOneModuloJobData) {
-    return await this.inscripcionesQueue.add(ModuloJobType.FIND_ONE, data, {
-      jobId: uuidv4(),
-    });
+    const job = await this.inscripcionesQueue.add(
+      ModuloJobType.FIND_ONE,
+      data,
+      {
+        jobId: uuidv4(),
+      },
+    );
+    return { jobId: job.id };
   }
 
   async enqueueUpdateModulo(data: UpdateModuloJobData) {
-    return await this.inscripcionesQueue.add(ModuloJobType.UPDATE, data, {
+    const job = await this.inscripcionesQueue.add(ModuloJobType.UPDATE, data, {
       jobId: uuidv4(),
     });
+    return { jobId: job.id };
   }
 
   async enqueueDeleteModulo(data: DeleteModuloJobData) {
-    return await this.inscripcionesQueue.add(ModuloJobType.DELETE, data, {
+    const job = await this.inscripcionesQueue.add(ModuloJobType.DELETE, data, {
       jobId: uuidv4(),
     });
+    return { jobId: job.id };
   }
 }

@@ -8,6 +8,7 @@ import {
   UpdateDocenteJobData,
   FindOneDocenteJobData,
   DeleteDocenteJobData,
+  DocenteJobName,
 } from '../types/docente-job.types';
 
 @Injectable()
@@ -19,40 +20,49 @@ export class DocenteQueueService {
 
   async addCreateDocenteJob(data: CreateDocenteJobData) {
     const jobId = uuidv4();
-    return await this.inscripcionesQueue.add('docentes_create', data, {
+    const job = await this.inscripcionesQueue.add(DocenteJobName.CREATE, data, {
       jobId,
     });
+    return { jobId: job.id };
   }
 
   async addFindAllDocentesJob() {
     const jobId = uuidv4();
-    return await this.inscripcionesQueue.add(
-      'docentes_find_all',
+    const job = await this.inscripcionesQueue.add(
+      DocenteJobName.FIND_ALL,
       {},
       {
         jobId,
       },
     );
+    return { jobId: job.id };
   }
 
   async addFindOneDocenteJob(data: FindOneDocenteJobData) {
     const jobId = uuidv4();
-    return await this.inscripcionesQueue.add('docentes_find_one', data, {
-      jobId,
-    });
+    const job = await this.inscripcionesQueue.add(
+      DocenteJobName.FIND_ONE,
+      data,
+      {
+        jobId,
+      },
+    );
+    return { jobId: job.id };
   }
 
   async addUpdateDocenteJob(data: UpdateDocenteJobData) {
     const jobId = uuidv4();
-    return await this.inscripcionesQueue.add('docentes_update', data, {
+    const job = await this.inscripcionesQueue.add(DocenteJobName.UPDATE, data, {
       jobId,
     });
+    return { jobId: job.id };
   }
 
   async addDeleteDocenteJob(data: DeleteDocenteJobData) {
     const jobId = uuidv4();
-    return await this.inscripcionesQueue.add('docentes_delete', data, {
+    const job = await this.inscripcionesQueue.add(DocenteJobName.DELETE, data, {
       jobId,
     });
+    return { jobId: job.id };
   }
 }

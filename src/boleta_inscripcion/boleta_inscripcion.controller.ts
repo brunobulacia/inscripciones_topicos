@@ -29,8 +29,85 @@ export class BoletaInscripcionController {
     private readonly boletaInscripcionQueueService: BoletaInscripcionQueueService,
   ) {}
 
-  @Post()
-  @ApiOperation({ summary: 'Crear nueva boleta de inscripción' })
+  //METODOS SINCRONOS
+  @Get('/sync')
+  @ApiOperation({
+    summary: 'Obtener todas las boletas de inscripción (sincrónico)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Boletas de inscripción obtenidas exitosamente',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', example: 'uuid-example' },
+          fichaInscripcionId: { type: 'string', example: 'uuid-ficha' },
+          avanceAcademicoId: {
+            type: 'string',
+            example: 'uuid-avance',
+            nullable: true,
+          },
+          estudianteId: {
+            type: 'string',
+            example: 'uuid-estudiante',
+            nullable: true,
+          },
+          estaActivo: { type: 'boolean', example: true },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+    },
+  })
+  findAll() {
+    return this.boletaInscripcionService.findAll();
+  }
+
+  @Get('/sync/:id')
+  @ApiOperation({
+    summary: 'Obtener boleta de inscripción por ID (sincrónico)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID de la boleta de inscripción',
+    example: 'uuid-example',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Boleta de inscripción obtenida exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'uuid-example' },
+        fichaInscripcionId: { type: 'string', example: 'uuid-ficha' },
+        avanceAcademicoId: {
+          type: 'string',
+          example: 'uuid-avance',
+          nullable: true,
+        },
+        estudianteId: {
+          type: 'string',
+          example: 'uuid-estudiante',
+          nullable: true,
+        },
+        estaActivo: { type: 'boolean', example: true },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Boleta de inscripción no encontrada',
+  })
+  findOne(@Param('id') id: string) {
+    return this.boletaInscripcionService.findOne(id);
+  }
+
+  @Post('/sync')
+  @ApiOperation({ summary: 'Crear nueva boleta de inscripción (sincrónico)' })
   @ApiBody({
     description: 'Datos de la boleta de inscripción a crear',
     schema: {
@@ -54,72 +131,34 @@ export class BoletaInscripcionController {
   @ApiResponse({
     status: 201,
     description: 'Boleta de inscripción creada exitosamente',
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  create(@Body() createBoletaInscripcionDto: CreateBoletaInscripcionDto) {
-    return this.boletaInscripcionQueueService.createBoletaInscripcion(
-      createBoletaInscripcionDto,
-    );
-  }
-
-  @Get()
-  @ApiOperation({ summary: 'Obtener todas las boletas de inscripción' })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de boletas de inscripción',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          fichaInscripcionId: { type: 'string' },
-          avanceAcademicoId: { type: 'string', nullable: true },
-          estudianteId: { type: 'string', nullable: true },
-          estaActivo: { type: 'boolean' },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
-        },
-      },
-    },
-  })
-  findAll() {
-    return this.boletaInscripcionQueueService.findAllBoletaInscripcion();
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Obtener boleta de inscripción por ID' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID de la boleta de inscripción',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Boleta de inscripción encontrada',
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string' },
-        fichaInscripcionId: { type: 'string' },
-        avanceAcademicoId: { type: 'string', nullable: true },
-        estudianteId: { type: 'string', nullable: true },
-        estaActivo: { type: 'boolean' },
+        id: { type: 'string', example: 'uuid-example' },
+        fichaInscripcionId: { type: 'string', example: 'uuid-ficha' },
+        avanceAcademicoId: {
+          type: 'string',
+          example: 'uuid-avance',
+          nullable: true,
+        },
+        estudianteId: {
+          type: 'string',
+          example: 'uuid-estudiante',
+          nullable: true,
+        },
+        estaActivo: { type: 'boolean', example: true },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' },
       },
     },
   })
-  @ApiResponse({
-    status: 404,
-    description: 'Boleta de inscripción no encontrada',
-  })
-  findOne(@Param('id') id: string) {
-    return this.boletaInscripcionQueueService.findOneBoletaInscripcion(id);
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  create(@Body() createBoletaInscripcionDto: CreateBoletaInscripcionDto) {
+    return this.boletaInscripcionService.create(createBoletaInscripcionDto);
   }
 
-  @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar boleta de inscripción' })
+  @Patch('/sync/:id')
+  @ApiOperation({ summary: 'Actualizar boleta de inscripción (sincrónico)' })
   @ApiParam({
     name: 'id',
     description: 'ID de la boleta de inscripción',
@@ -148,6 +187,26 @@ export class BoletaInscripcionController {
   @ApiResponse({
     status: 200,
     description: 'Boleta de inscripción actualizada exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'uuid-example' },
+        fichaInscripcionId: { type: 'string', example: 'uuid-ficha' },
+        avanceAcademicoId: {
+          type: 'string',
+          example: 'uuid-avance',
+          nullable: true,
+        },
+        estudianteId: {
+          type: 'string',
+          example: 'uuid-estudiante',
+          nullable: true,
+        },
+        estaActivo: { type: 'boolean', example: true },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+    },
   })
   @ApiResponse({
     status: 404,
@@ -158,14 +217,11 @@ export class BoletaInscripcionController {
     @Param('id') id: string,
     @Body() updateBoletaInscripcionDto: UpdateBoletaInscripcionDto,
   ) {
-    return this.boletaInscripcionQueueService.updateBoletaInscripcion(
-      id,
-      updateBoletaInscripcionDto,
-    );
+    return this.boletaInscripcionService.update(id, updateBoletaInscripcionDto);
   }
 
-  @Delete(':id')
-  @ApiOperation({ summary: 'Eliminar boleta de inscripción' })
+  @Delete('/sync/:id')
+  @ApiOperation({ summary: 'Eliminar boleta de inscripción (sincrónico)' })
   @ApiParam({
     name: 'id',
     description: 'ID de la boleta de inscripción',
@@ -174,12 +230,228 @@ export class BoletaInscripcionController {
   @ApiResponse({
     status: 200,
     description: 'Boleta de inscripción eliminada exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Boleta de inscripción eliminada exitosamente',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 404,
     description: 'Boleta de inscripción no encontrada',
   })
   remove(@Param('id') id: string) {
-    return this.boletaInscripcionQueueService.deleteBoletaInscripcion(id);
+    return this.boletaInscripcionService.remove(id);
+  }
+
+  //METODOS ASINCRONOS
+  @Post('/async')
+  @ApiOperation({ summary: 'Crear nueva boleta de inscripción (asíncrono)' })
+  @ApiBody({
+    description: 'Datos de la boleta de inscripción a crear',
+    schema: {
+      type: 'object',
+      properties: {
+        fichaInscripcionId: { type: 'string', example: 'uuid-ficha' },
+        avanceAcademicoId: {
+          type: 'string',
+          example: 'uuid-avance',
+          nullable: true,
+        },
+        estudianteId: {
+          type: 'string',
+          example: 'uuid-estudiante',
+          nullable: true,
+        },
+        estaActivo: { type: 'boolean', example: true },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 202,
+    description: 'Job encolado para crear boleta de inscripción',
+    schema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', example: 'job-uuid' },
+        message: {
+          type: 'string',
+          example: 'Job encolado para crear boleta de inscripción',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  async createQueue(
+    @Body() createBoletaInscripcionDto: CreateBoletaInscripcionDto,
+  ) {
+    const result =
+      await this.boletaInscripcionQueueService.createBoletaInscripcion(
+        createBoletaInscripcionDto,
+      );
+    return {
+      ...result,
+      message: 'Job encolado para crear boleta de inscripción',
+    };
+  }
+
+  @Get('/async')
+  @ApiOperation({
+    summary: 'Obtener todas las boletas de inscripción (asíncrono)',
+  })
+  @ApiResponse({
+    status: 202,
+    description: 'Job encolado para obtener boletas de inscripción',
+    schema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', example: 'job-uuid' },
+        message: {
+          type: 'string',
+          example: 'Job encolado para obtener boletas de inscripción',
+        },
+      },
+    },
+  })
+  async findAllQueue() {
+    const result =
+      await this.boletaInscripcionQueueService.findAllBoletaInscripcion();
+    return {
+      ...result,
+      message: 'Job encolado para obtener boletas de inscripción',
+    };
+  }
+
+  @Get('/async/:id')
+  @ApiOperation({ summary: 'Obtener boleta de inscripción por ID (asíncrono)' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID de la boleta de inscripción',
+    example: 'uuid-example',
+  })
+  @ApiResponse({
+    status: 202,
+    description: 'Job encolado para obtener boleta de inscripción',
+    schema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', example: 'job-uuid' },
+        message: {
+          type: 'string',
+          example: 'Job encolado para obtener boleta de inscripción',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Boleta de inscripción no encontrada',
+  })
+  async findOneQueue(@Param('id') id: string) {
+    const result =
+      await this.boletaInscripcionQueueService.findOneBoletaInscripcion(id);
+    return {
+      ...result,
+      message: 'Job encolado para obtener boleta de inscripción',
+    };
+  }
+
+  @Patch('/async/:id')
+  @ApiOperation({ summary: 'Actualizar boleta de inscripción (asíncrono)' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID de la boleta de inscripción',
+    example: 'uuid-example',
+  })
+  @ApiBody({
+    description: 'Datos a actualizar de la boleta de inscripción',
+    schema: {
+      type: 'object',
+      properties: {
+        fichaInscripcionId: { type: 'string', example: 'uuid-ficha' },
+        avanceAcademicoId: {
+          type: 'string',
+          example: 'uuid-avance',
+          nullable: true,
+        },
+        estudianteId: {
+          type: 'string',
+          example: 'uuid-estudiante',
+          nullable: true,
+        },
+        estaActivo: { type: 'boolean', example: true },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 202,
+    description: 'Job encolado para actualizar boleta de inscripción',
+    schema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', example: 'job-uuid' },
+        message: {
+          type: 'string',
+          example: 'Job encolado para actualizar boleta de inscripción',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Boleta de inscripción no encontrada',
+  })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  async updateQueue(
+    @Param('id') id: string,
+    @Body() updateBoletaInscripcionDto: UpdateBoletaInscripcionDto,
+  ) {
+    const result =
+      await this.boletaInscripcionQueueService.updateBoletaInscripcion(
+        id,
+        updateBoletaInscripcionDto,
+      );
+    return {
+      ...result,
+      message: 'Job encolado para actualizar boleta de inscripción',
+    };
+  }
+
+  @Delete('/async/:id')
+  @ApiOperation({ summary: 'Eliminar boleta de inscripción (asíncrono)' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID de la boleta de inscripción',
+    example: 'uuid-example',
+  })
+  @ApiResponse({
+    status: 202,
+    description: 'Job encolado para eliminar boleta de inscripción',
+    schema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', example: 'job-uuid' },
+        message: {
+          type: 'string',
+          example: 'Job encolado para eliminar boleta de inscripción',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Boleta de inscripción no encontrada',
+  })
+  async removeQueue(@Param('id') id: string) {
+    const result =
+      await this.boletaInscripcionQueueService.deleteBoletaInscripcion(id);
+    return {
+      ...result,
+      message: 'Job encolado para eliminar boleta de inscripción',
+    };
   }
 }

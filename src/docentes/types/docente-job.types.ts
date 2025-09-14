@@ -1,5 +1,13 @@
 import { UpdateDocenteDto } from '../dto/update-docente.dto';
 
+export enum DocenteJobName {
+  CREATE = 'DOCENTES_CREATE',
+  FIND_ALL = 'DOCENTES_FIND_ALL',
+  FIND_ONE = 'DOCENTES_FIND_ONE',
+  UPDATE = 'DOCENTES_UPDATE',
+  DELETE = 'DOCENTES_DELETE',
+}
+
 export interface CreateDocenteJobData {
   nombre: string;
   apellido_paterno: string;

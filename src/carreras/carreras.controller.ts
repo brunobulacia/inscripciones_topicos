@@ -29,7 +29,132 @@ export class CarrerasController {
     private readonly carreraQueueService: CarreraQueueService,
   ) {}
 
-  @Post()
+  //METODOS SINCRONOS
+  @Get('/sync')
+  @ApiOperation({ summary: 'Obtener todas las carreras (sincrónico)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Carreras obtenidas exitosamente',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', example: 'uuid-example' },
+          codigo: { type: 'number', example: 1 },
+          nombre: { type: 'string', example: 'Ingeniería de Sistemas' },
+          estaActivo: { type: 'boolean', example: true },
+        },
+      },
+    },
+  })
+  findAll() {
+    return this.carrerasService.findAll();
+  }
+
+  @Get('/sync/:id')
+  @ApiOperation({ summary: 'Obtener carrera por ID (sincrónico)' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID de la carrera',
+    example: 'uuid-example',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Carrera obtenida exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'uuid-example' },
+        codigo: { type: 'number', example: 1 },
+        nombre: { type: 'string', example: 'Ingeniería de Sistemas' },
+        estaActivo: { type: 'boolean', example: true },
+      },
+    },
+  })
+  findOne(@Param('id') id: string) {
+    return this.carrerasService.findOne(id);
+  }
+
+  @Post('/sync')
+  @ApiOperation({ summary: 'Crear nueva carrera (sincrónico)' })
+  @ApiBody({
+    description: 'Datos de la nueva carrera',
+    schema: {
+      type: 'object',
+      properties: {
+        codigo: { type: 'number', example: 1 },
+        nombre: { type: 'string', example: 'Ingeniería de Sistemas' },
+        estaActivo: { type: 'boolean', example: true },
+      },
+    },
+  })
+  create(@Body() createCarreraDto: CreateCarreraDto) {
+    return this.carrerasService.create(createCarreraDto);
+  }
+
+  @Patch('/sync/:id')
+  @ApiOperation({ summary: 'Actualizar carrera (sincrónico)' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID de la carrera',
+    example: 'uuid-example',
+  })
+  @ApiBody({
+    description: 'Datos a actualizar de la carrera',
+    schema: {
+      type: 'object',
+      properties: {
+        codigo: { type: 'number', example: 1 },
+        nombre: { type: 'string', example: 'Ingeniería de Sistemas' },
+        estaActivo: { type: 'boolean', example: true },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Carrera actualizada exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'uuid-example' },
+        codigo: { type: 'number', example: 1 },
+        nombre: { type: 'string', example: 'Ingeniería de Sistemas' },
+        estaActivo: { type: 'boolean', example: true },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  update(@Param('id') id: string, @Body() updateCarreraDto: UpdateCarreraDto) {
+    return this.carrerasService.update(id, updateCarreraDto);
+  }
+
+  @Delete('/sync/:id')
+  @ApiOperation({ summary: 'Eliminar carrera (sincrónico)' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID de la carrera',
+    example: 'uuid-example',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Carrera eliminada exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Carrera eliminada exitosamente',
+        },
+      },
+    },
+  })
+  remove(@Param('id') id: string) {
+    return this.carrerasService.remove(id);
+  }
+
+  //METODOS ASINCRONOS
+  @Post('/async')
   @ApiOperation({ summary: 'Crear nueva carrera (asíncrono)' })
   @ApiBody({
     description: 'Datos de la carrera a crear',
@@ -54,7 +179,7 @@ export class CarrerasController {
     },
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async create(@Body() createCarreraDto: CreateCarreraDto) {
+  async createQueue(@Body() createCarreraDto: CreateCarreraDto) {
     const result =
       await this.carreraQueueService.createCarrera(createCarreraDto);
     return {
@@ -63,7 +188,7 @@ export class CarrerasController {
     };
   }
 
-  @Get()
+  @Get('/async')
   @ApiOperation({ summary: 'Obtener todas las carreras (asíncrono)' })
   @ApiResponse({
     status: 202,
@@ -79,7 +204,7 @@ export class CarrerasController {
       },
     },
   })
-  async findAll() {
+  async findAllQueue() {
     const result = await this.carreraQueueService.findAllCarreras();
     return {
       ...result,
@@ -87,7 +212,7 @@ export class CarrerasController {
     };
   }
 
-  @Get(':id')
+  @Get('/async/:id')
   @ApiOperation({ summary: 'Obtener carrera por ID (asíncrono)' })
   @ApiParam({
     name: 'id',
@@ -108,7 +233,7 @@ export class CarrerasController {
       },
     },
   })
-  async findOne(@Param('id') id: string) {
+  async findOneQueue(@Param('id') id: string) {
     const result = await this.carreraQueueService.findOneCarrera({ id });
     return {
       ...result,
@@ -116,7 +241,7 @@ export class CarrerasController {
     };
   }
 
-  @Patch(':id')
+  @Patch('/async/:id')
   @ApiOperation({ summary: 'Actualizar carrera (asíncrono)' })
   @ApiParam({
     name: 'id',
@@ -149,7 +274,7 @@ export class CarrerasController {
     },
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async update(
+  async updateQueue(
     @Param('id') id: string,
     @Body() updateCarreraDto: UpdateCarreraDto,
   ) {
@@ -163,7 +288,7 @@ export class CarrerasController {
     };
   }
 
-  @Delete(':id')
+  @Delete('/async/:id')
   @ApiOperation({ summary: 'Eliminar carrera (asíncrono)' })
   @ApiParam({
     name: 'id',
@@ -184,7 +309,7 @@ export class CarrerasController {
       },
     },
   })
-  async remove(@Param('id') id: string) {
+  async removeQueue(@Param('id') id: string) {
     const result = await this.carreraQueueService.deleteCarrera({ id });
     return {
       ...result,

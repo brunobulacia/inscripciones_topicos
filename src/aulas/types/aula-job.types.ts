@@ -1,5 +1,13 @@
 import { UpdateAulaDto } from '../dto/update-aula.dto';
 
+export enum AulasJobType {
+  CREATE = 'CREATE_AULA',
+  FIND_ALL = 'FIND_ALL_AULAS',
+  FIND_ONE = 'FIND_ONE_AULA',
+  UPDATE = 'UPDATE_AULA',
+  DELETE = 'DELETE_AULA',
+}
+
 export interface CreateAulaJobData {
   numero: number;
   capacidad: number;

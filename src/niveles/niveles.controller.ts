@@ -29,7 +29,135 @@ export class NivelesController {
     private readonly nivelQueueService: NivelQueueService,
   ) {}
 
-  @Post()
+  //METODOS SINCRONOS
+  @Get('/sync')
+  @ApiOperation({
+    summary: 'Obtener todos los niveles académicos (sincrónico)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Niveles académicos obtenidos exitosamente',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', example: 'uuid-example' },
+          semestre: { type: 'number', example: 1 },
+          estaActivo: { type: 'boolean', example: true },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+    },
+  })
+  findAll() {
+    return this.nivelesService.findAll();
+  }
+
+  @Get('/sync/:id')
+  @ApiOperation({ summary: 'Obtener nivel académico por ID (sincrónico)' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del nivel académico',
+    example: 'uuid-example',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Nivel académico obtenido exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'uuid-example' },
+        semestre: { type: 'number', example: 1 },
+        estaActivo: { type: 'boolean', example: true },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  findOne(@Param('id') id: string) {
+    return this.nivelesService.findOne(id);
+  }
+
+  @Post('/sync')
+  @ApiOperation({ summary: 'Crear nuevo nivel académico (sincrónico)' })
+  @ApiBody({
+    description: 'Datos del nuevo nivel académico',
+    schema: {
+      type: 'object',
+      properties: {
+        semestre: { type: 'number', example: 1 },
+        estaActivo: { type: 'boolean', example: true },
+      },
+    },
+  })
+  create(@Body() createNivelDto: CreateNivelDto) {
+    return this.nivelesService.create(createNivelDto);
+  }
+
+  @Patch('/sync/:id')
+  @ApiOperation({ summary: 'Actualizar nivel académico (sincrónico)' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del nivel académico',
+    example: 'uuid-example',
+  })
+  @ApiBody({
+    description: 'Datos a actualizar del nivel académico',
+    schema: {
+      type: 'object',
+      properties: {
+        semestre: { type: 'number', example: 1 },
+        estaActivo: { type: 'boolean', example: true },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Nivel académico actualizado exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'uuid-example' },
+        semestre: { type: 'number', example: 1 },
+        estaActivo: { type: 'boolean', example: true },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  update(@Param('id') id: string, @Body() updateNivelDto: UpdateNivelDto) {
+    return this.nivelesService.update(id, updateNivelDto);
+  }
+
+  @Delete('/sync/:id')
+  @ApiOperation({ summary: 'Eliminar nivel académico (sincrónico)' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del nivel académico',
+    example: 'uuid-example',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Nivel académico eliminado exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Nivel académico eliminado exitosamente',
+        },
+      },
+    },
+  })
+  remove(@Param('id') id: string) {
+    return this.nivelesService.remove(id);
+  }
+
+  //METODOS ASINCRONOS
+  @Post('/async')
   @ApiOperation({ summary: 'Crear nuevo nivel académico (asíncrono)' })
   @ApiBody({
     description: 'Datos del nivel académico a crear',
@@ -56,7 +184,7 @@ export class NivelesController {
     },
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async create(@Body() createNivelDto: CreateNivelDto) {
+  async createQueue(@Body() createNivelDto: CreateNivelDto) {
     const result = await this.nivelQueueService.createNivel(createNivelDto);
     return {
       ...result,
@@ -64,7 +192,7 @@ export class NivelesController {
     };
   }
 
-  @Get()
+  @Get('/async')
   @ApiOperation({ summary: 'Obtener todos los niveles académicos (asíncrono)' })
   @ApiResponse({
     status: 202,
@@ -80,7 +208,7 @@ export class NivelesController {
       },
     },
   })
-  async findAll() {
+  async findAllQueue() {
     const result = await this.nivelQueueService.findAllNiveles();
     return {
       ...result,
@@ -88,7 +216,7 @@ export class NivelesController {
     };
   }
 
-  @Get(':id')
+  @Get('/async/:id')
   @ApiOperation({ summary: 'Obtener nivel académico por ID (asíncrono)' })
   @ApiParam({
     name: 'id',
@@ -109,7 +237,7 @@ export class NivelesController {
       },
     },
   })
-  async findOne(@Param('id') id: string) {
+  async findOneQueue(@Param('id') id: string) {
     const result = await this.nivelQueueService.findOneNivel({ id });
     return {
       ...result,
@@ -117,7 +245,7 @@ export class NivelesController {
     };
   }
 
-  @Patch(':id')
+  @Patch('/async/:id')
   @ApiOperation({ summary: 'Actualizar nivel académico (asíncrono)' })
   @ApiParam({
     name: 'id',
@@ -149,7 +277,7 @@ export class NivelesController {
     },
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async update(
+  async updateQueue(
     @Param('id') id: string,
     @Body() updateNivelDto: UpdateNivelDto,
   ) {
@@ -163,7 +291,7 @@ export class NivelesController {
     };
   }
 
-  @Delete(':id')
+  @Delete('/async/:id')
   @ApiOperation({ summary: 'Eliminar nivel académico (asíncrono)' })
   @ApiParam({
     name: 'id',
@@ -184,7 +312,7 @@ export class NivelesController {
       },
     },
   })
-  async remove(@Param('id') id: string) {
+  async removeQueue(@Param('id') id: string) {
     const result = await this.nivelQueueService.deleteNivel({ id });
     return {
       ...result,
