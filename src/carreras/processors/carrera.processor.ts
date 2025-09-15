@@ -13,7 +13,9 @@ import {
 } from '../handlers/carrera.handlers';
 
 @Injectable()
-@Processor(QUEUE_NAMES.INSCRIPCIONES)
+@Processor(QUEUE_NAMES.INSCRIPCIONES, {
+  concurrency: 20, // Procesar hasta 20 jobs de carreras simultáneamente
+})
 export class CarreraProcessor extends BaseQueueProcessor {
   constructor(
     jobSerializer: QueueJobSerializer,

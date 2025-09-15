@@ -21,9 +21,14 @@ export class CarreraQueueService {
     const jobId = uuidv4();
     const job = await this.carreraQueue.add(CarreraJobType.CREATE, data, {
       jobId,
-      removeOnComplete: 100,
-      removeOnFail: 50,
-      delay: 10000, //PARA SIMULAR RETRASO NOMAS XD
+      removeOnComplete: false, // ← SIN LÍMITE - mantener todos los exitosos
+      removeOnFail: false, // ← SIN LÍMITE - mantener todos los fallidos
+      attempts: 1, // Solo 1 intento para evitar duplicados
+      backoff: {
+        type: 'fixed',
+        delay: 1000,
+      },
+      // delay: 10000, // DELAY REMOVIDO para testing de alta concurrencia
     });
     return { jobId: job.id };
   }
@@ -32,8 +37,8 @@ export class CarreraQueueService {
     const jobId = uuidv4();
     const job = await this.carreraQueue.add(CarreraJobType.FIND_ALL, null, {
       jobId,
-      removeOnComplete: 100,
-      removeOnFail: 50,
+      removeOnComplete: false, // ← SIN LÍMITE
+      removeOnFail: false, // ← SIN LÍMITE
       // delay: Math.floor(Math.random() * 500),
     });
     return { jobId: job.id };
@@ -43,8 +48,8 @@ export class CarreraQueueService {
     const jobId = uuidv4();
     const job = await this.carreraQueue.add(CarreraJobType.FIND_ONE, data, {
       jobId,
-      removeOnComplete: 100,
-      removeOnFail: 50,
+      removeOnComplete: false, // ← SIN LÍMITE
+      removeOnFail: false, // ← SIN LÍMITE
       // delay: Math.floor(Math.random() * 500),
     });
     return { jobId: job.id };
@@ -54,8 +59,8 @@ export class CarreraQueueService {
     const jobId = uuidv4();
     const job = await this.carreraQueue.add(CarreraJobType.UPDATE, data, {
       jobId,
-      removeOnComplete: 100,
-      removeOnFail: 50,
+      removeOnComplete: false, // ← SIN LÍMITE
+      removeOnFail: false, // ← SIN LÍMITE
       // delay: Math.floor(Math.random() * 500),
     });
     return { jobId: job.id };
@@ -65,8 +70,8 @@ export class CarreraQueueService {
     const jobId = uuidv4();
     const job = await this.carreraQueue.add(CarreraJobType.DELETE, data, {
       jobId,
-      removeOnComplete: 100,
-      removeOnFail: 50,
+      removeOnComplete: false, // ← SIN LÍMITE
+      removeOnFail: false, // ← SIN LÍMITE
       // delay: Math.floor(Math.random() * 500),
     });
     return { jobId: job.id };

@@ -31,6 +31,7 @@ import { OfertaGrupoMateriasModule } from './oferta_grupo_materias/oferta_grupo_
 import { QUEUE_NAMES } from './common/types/queue.types';
 import { QueueCommonModule } from './common/queue-common.module';
 import { BullMQDashboardModule } from './bullmq-dashboard/bullmq-dashboard.module';
+import { GMOfertaModule } from './transactions/generarMaestroDeOferta/gMOferta.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { BullMQDashboardModule } from './bullmq-dashboard/bullmq-dashboard.modul
 
     //TRANSACCIONES
     InscripcionModule,
+    GMOfertaModule,
 
     //ABRIR UN PUERTO PARA BULLMQ Y REDIS
     BullModule.forRoot({

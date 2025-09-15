@@ -1,0 +1,14 @@
+[
+  {
+    "url": "/api/carreras/sync",
+    "method": "GET"
+  },
+  {
+    "url": "/api/carreras/sync",
+    "method": "POST",
+    "body": {
+      "nombre": "string",
+      "codigo": 186
+    }
+  }
+]
