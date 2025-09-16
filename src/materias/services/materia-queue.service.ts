@@ -23,8 +23,8 @@ export class MateriaQueueService {
     const jobId = uuidv4();
     const job = await this.inscripcionesQueue.add(MateriaJobType.CREATE, data, {
       jobId,
-      removeOnComplete: 10,
-      removeOnFail: 5,
+      removeOnComplete: false,
+      removeOnFail: false,
     });
 
     return {
@@ -41,8 +41,8 @@ export class MateriaQueueService {
       jobData,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
 
@@ -60,8 +60,8 @@ export class MateriaQueueService {
       data,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
 
@@ -79,8 +79,8 @@ export class MateriaQueueService {
       jobData,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
 
@@ -95,8 +95,8 @@ export class MateriaQueueService {
     const data: DeleteMateriaJobData = { id };
     const job = await this.inscripcionesQueue.add(MateriaJobType.DELETE, data, {
       jobId,
-      removeOnComplete: 10,
-      removeOnFail: 5,
+      removeOnComplete: false,
+      removeOnFail: false,
     });
 
     return {

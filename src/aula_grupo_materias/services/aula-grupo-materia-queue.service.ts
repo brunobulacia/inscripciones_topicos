@@ -26,8 +26,8 @@ export class AulaGrupoMateriaQueueService {
       data,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
 
@@ -45,8 +45,8 @@ export class AulaGrupoMateriaQueueService {
       jobData,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
 
@@ -64,8 +64,8 @@ export class AulaGrupoMateriaQueueService {
       data,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
 
@@ -86,8 +86,8 @@ export class AulaGrupoMateriaQueueService {
       jobData,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
 
@@ -105,8 +105,8 @@ export class AulaGrupoMateriaQueueService {
       data,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
 

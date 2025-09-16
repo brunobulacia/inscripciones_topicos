@@ -26,8 +26,6 @@ export class DetalleInscripcionQueueService {
       data,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
       },
     );
 
@@ -47,8 +45,6 @@ export class DetalleInscripcionQueueService {
       jobData,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
       },
     );
 
@@ -66,8 +62,6 @@ export class DetalleInscripcionQueueService {
       data,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
       },
     );
 
@@ -88,8 +82,6 @@ export class DetalleInscripcionQueueService {
       jobData,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
       },
     );
 
@@ -107,8 +99,6 @@ export class DetalleInscripcionQueueService {
       data,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
       },
     );
 

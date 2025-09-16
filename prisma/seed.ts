@@ -735,6 +735,62 @@ export const Aulas = [...Array(37).keys()].map((i) => ({
   moduloId: '4e9e7f2d-6d8a-41d3-9d2a-b5a1b6b60236',
 }));
 
+const estudiantes = [
+  {
+    id: 'd24eb3b9-fd77-48eb-8be7-d4591fbe9cbc',
+    nombre: 'Bruno',
+    apellido_paterno: 'Bulacia',
+    apellido_materno: 'Paz',
+    ci: '7821386',
+    email: 'brunobulacia@icloud.com',
+    telefono: '76386539',
+    password: 'BRUNO6464',
+    matricula: '223041866',
+    ppac: 60,
+  },
+];
+
+const avanceAcademico = [
+  {
+    id: '0197739f-528c-47ee-bc75-696ef6b96818',
+    estudianteId: 'd24eb3b9-fd77-48eb-8be7-d4591fbe9cbc',
+  },
+];
+
+const boletaInscripcion = [
+  {
+    id: '694b6154-f619-435b-b888-c22c495c907e',
+    estudianteId: 'd24eb3b9-fd77-48eb-8be7-d4591fbe9cbc',
+    avanceAcademicoId: '0197739f-528c-47ee-bc75-696ef6b96818',
+  },
+];
+
+const maestroDeOferta = [
+  {
+    id: '80be2bf8-efac-4adc-afcd-36e166fc17f0',
+    periodoId: 'e98c933f-d706-4bdc-bdf8-755ea315b0eb',
+    estudianteId: 'd24eb3b9-fd77-48eb-8be7-d4591fbe9cbc',
+  },
+];
+
+const ofertaGrupoMateria = [
+  {
+    id: '619c223f-97f0-4e5d-ae37-baf1ddc70af9',
+    grupoMateriaId: '49ba5aaa-8217-4ea7-a6ef-ab55aaaed941',
+    maestroDeOfertaId: '80be2bf8-efac-4adc-afcd-36e166fc17f0',
+  },
+  {
+    id: '81d6a1e5-15fc-4dee-b96c-64ed568836e6',
+    grupoMateriaId: '1d23b410-00b3-4a85-aafe-4ae7a3139151',
+    maestroDeOfertaId: '80be2bf8-efac-4adc-afcd-36e166fc17f0',
+  },
+  {
+    id: 'c03ab71c-39b8-42c0-89c7-1984f326b363',
+    grupoMateriaId: '1d23b410-00b3-4a85-aafe-4ae7a3139151',
+    maestroDeOfertaId: '80be2bf8-efac-4adc-afcd-36e166fc17f0',
+  },
+];
+
 async function main() {
   //VACIAR LA BASE DE DATOS ANTES
   await prisma.prerequisito.deleteMany({});
@@ -748,6 +804,11 @@ async function main() {
   await prisma.periodo.deleteMany({});
   await prisma.gestion.deleteMany({});
   await prisma.docente.deleteMany({});
+  await prisma.ofertaGrupoMateria.deleteMany({});
+  await prisma.maestroDeOferta.deleteMany({});
+  await prisma.boletaInscripcion.deleteMany({});
+  await prisma.avanceAcademico.deleteMany({});
+  await prisma.estudiante.deleteMany({});
 
   // Insertar datos base primero (sin dependencias)
   await prisma.docente.createMany({ data: docentes });
@@ -769,7 +830,21 @@ async function main() {
   // Finalmente insertar prerequisitos (depende de materias)
   await prisma.prerequisito.createMany({ data: prerequisitos });
 
+  // Insertar datos en el orden correcto considerando dependencias
+  await prisma.estudiante.createMany({ data: estudiantes });
+  await prisma.avanceAcademico.createMany({ data: avanceAcademico });
+  await prisma.boletaInscripcion.createMany({ data: boletaInscripcion });
+  await prisma.maestroDeOferta.createMany({ data: maestroDeOferta });
+
+  // Insertar grupoMateria ANTES de ofertaGrupoMateria (foreign key dependency)
   await prisma.grupoMateria.createMany({ data: gruposMateria });
+
+  // Evitar fallos por duplicados en el seed cuando ya exista la combinación única
+  // (grupoMateriaId, maestroDeOfertaId). Prisma soporta `skipDuplicates` en createMany.
+  await prisma.ofertaGrupoMateria.createMany({
+    data: ofertaGrupoMateria,
+    skipDuplicates: true,
+  });
   console.log('Seed completado.');
 }
 

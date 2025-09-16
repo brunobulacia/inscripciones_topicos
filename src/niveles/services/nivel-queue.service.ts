@@ -21,9 +21,8 @@ export class NivelQueueService {
     const jobId = uuidv4();
     const job = await this.nivelQueue.add(NivelJobType.CREATE, data, {
       jobId,
-      removeOnComplete: 100,
-      removeOnFail: 50,
-      delay: 10000, // Para simular retraso
+      removeOnComplete: false,
+      removeOnFail: false,
     });
     return { jobId: job.id };
   }
@@ -32,8 +31,8 @@ export class NivelQueueService {
     const jobId = uuidv4();
     const job = await this.nivelQueue.add(NivelJobType.FIND_ALL, null, {
       jobId,
-      removeOnComplete: 100,
-      removeOnFail: 50,
+      removeOnComplete: false,
+      removeOnFail: false,
     });
     return { jobId: job.id };
   }
@@ -42,8 +41,8 @@ export class NivelQueueService {
     const jobId = uuidv4();
     const job = await this.nivelQueue.add(NivelJobType.FIND_ONE, data, {
       jobId,
-      removeOnComplete: 100,
-      removeOnFail: 50,
+      removeOnComplete: false,
+      removeOnFail: false,
     });
     return { jobId: job.id };
   }
@@ -52,9 +51,8 @@ export class NivelQueueService {
     const jobId = uuidv4();
     const job = await this.nivelQueue.add(NivelJobType.UPDATE, data, {
       jobId,
-      removeOnComplete: 100,
-      removeOnFail: 50,
-      delay: 10000, // Para simular retraso
+      removeOnComplete: false,
+      removeOnFail: false,
     });
     return { jobId: job.id };
   }
@@ -63,9 +61,8 @@ export class NivelQueueService {
     const jobId = uuidv4();
     const job = await this.nivelQueue.add(NivelJobType.DELETE, data, {
       jobId,
-      removeOnComplete: 100,
-      removeOnFail: 50,
-      delay: 10000, // Para simular retraso
+      removeOnComplete: false,
+      removeOnFail: false,
     });
     return { jobId: job.id };
   }

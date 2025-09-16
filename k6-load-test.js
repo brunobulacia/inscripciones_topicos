@@ -12,7 +12,7 @@ export const options = {
   scenarios: {
     constant_load: {
       executor: 'constant-vus',
-      vus: 1, // 1 usuario concurrente
+      vus: 10, // 1 usuario concurrente
       duration: '5s', // Test de 5 segundos
     },
   },
@@ -133,7 +133,7 @@ export function setup() {
   console.log('🚀 Iniciando test de carga con K6');
   console.log(`📊 Configuración: 5 usuarios concurrentes`);
   console.log(`🎯 URL base: ${BASE_URL}`);
-  console.log('⏱️  Duración: 10s constant load + 10s spike test');
+  console.log('⏱️  Duración: 10s constant load');
   
   // Verificar que el servidor esté disponible
   const response = http.get(`${BASE_URL}/api/carreras/sync`);

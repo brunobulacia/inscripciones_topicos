@@ -2,6 +2,7 @@ import {
   Injectable,
   NotAcceptableException,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { CreateCarreraDto } from './dto/create-carrera.dto';
 import { UpdateCarreraDto } from './dto/update-carrera.dto';
@@ -13,15 +14,31 @@ export class CarrerasService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async create(createCarreraDto: CreateCarreraDto): Promise<Carrera> {
-    const createdCarrera = await this.prismaService.carrera.create({
-      data: createCarreraDto,
-    });
+    try {
+      const createdCarrera = await this.prismaService.carrera.create({
+        data: createCarreraDto,
+      });
 
-    if (!createdCarrera) {
-      throw new NotAcceptableException('Error al crear carrera');
+      if (!createdCarrera) {
+        throw new NotAcceptableException('Error al crear carrera');
+      }
+
+      return createdCarrera;
+    } catch (error: any) {
+      // Prisma unique constraint error code P2002
+      if (error?.code === 'P2002') {
+        // Determine which field caused the conflict if available
+        const target = error?.meta?.target ?? [];
+        const field =
+          Array.isArray(target) && target.length > 0
+            ? target[0]
+            : 'campo único';
+        throw new ConflictException(`Ya existe una carrera con el ${field}`);
+      }
+
+      // Re-throw other unexpected errors
+      throw error;
     }
-
-    return createdCarrera;
   }
 
   async findAll(): Promise<Carrera[]> {

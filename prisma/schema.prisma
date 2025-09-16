@@ -36,7 +36,7 @@ model PlanDeEstudio {
 
 model Nivel {
   id         String    @id @default(uuid())
-  semestre   Int
+  semestre   Int       @unique
   materias   Materia[]
   estaActivo Boolean   @default(true)
   updatedAt  DateTime  @updatedAt

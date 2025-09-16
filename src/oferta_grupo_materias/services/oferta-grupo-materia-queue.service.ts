@@ -26,8 +26,8 @@ export class OfertaGrupoMateriaQueueService {
       data,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
 
@@ -47,8 +47,8 @@ export class OfertaGrupoMateriaQueueService {
       jobData,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
 
@@ -66,8 +66,8 @@ export class OfertaGrupoMateriaQueueService {
       data,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
 
@@ -88,8 +88,8 @@ export class OfertaGrupoMateriaQueueService {
       jobData,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
 
@@ -107,8 +107,8 @@ export class OfertaGrupoMateriaQueueService {
       data,
       {
         jobId,
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
 

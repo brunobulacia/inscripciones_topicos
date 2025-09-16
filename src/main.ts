@@ -2,9 +2,12 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { BullMQDashboardService } from './bullmq-dashboard/bullmq-dashboard.service';
+import { FileLogger } from './logger/file-logger.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // Register file logger so that Nest logs are also persisted to logs/app.log
+  app.useLogger(new FileLogger());
   app.enableCors();
   app.setGlobalPrefix('api');
 
