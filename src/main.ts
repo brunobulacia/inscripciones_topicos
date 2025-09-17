@@ -47,9 +47,12 @@ async function bootstrap() {
     .addTag('aula-grupo-materias', 'Aula Grupo Materias')
     .build();
 
+  const host = process.env.HOST || '0.0.0.0';
+  const port = process.env.PORT || 3000;
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(port, host);
 }
 bootstrap();

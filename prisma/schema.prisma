@@ -68,7 +68,7 @@ model Gestion {
 
 model Periodo {
   id              String            @id @default(uuid())
-  numero          Int
+  numero          Int               @unique
   grupoMateria    GrupoMateria[]
   gestionId       String
   gestion         Gestion           @relation(fields: [gestionId], references: [id])
@@ -170,7 +170,7 @@ model AvanceAcademico {
 
 model Modulo {
   id         String   @id @default(uuid())
-  numero     Int
+  numero     Int      @unique
   aula       Aula[]
   estaActivo Boolean  @default(true)
   updatedAt  DateTime @updatedAt
