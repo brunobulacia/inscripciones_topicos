@@ -45,6 +45,10 @@ async function bootstrap() {
     .addTag('avance-academico', 'Avance Académico')
     .addTag('horarios', 'Horarios')
     .addTag('aula-grupo-materias', 'Aula Grupo Materias')
+    .addTag('colas', 'Gestión de Colas Dinámicas')
+    .addTag('workers', 'Gestión de Workers')
+    .addTag('endpoints', 'Gestión de Endpoints y Encolado Automático')
+    .addTag('queue-dashboard', 'Dashboard de Colas')
     .build();
 
   const host = process.env.HOST || '0.0.0.0';

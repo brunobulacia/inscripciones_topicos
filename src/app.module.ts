@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { CarrerasModule } from './carreras/carreras.module';
 import { PlanesDeEstudioModule } from './planes_de_estudio/planes_de_estudio.module';
@@ -32,6 +32,10 @@ import { QUEUE_NAMES } from './common/types/queue.types';
 import { QueueCommonModule } from './common/queue-common.module';
 import { BullMQDashboardModule } from './bullmq-dashboard/bullmq-dashboard.module';
 import { GMOfertaModule } from './transactions/generarMaestroDeOferta/gMOferta.module';
+import { ColasModule } from './colas/colas.module';
+import { WorkersModule } from './workers/workers.module';
+import { EndpointsModule } from './endpoints/endpoints.module';
+import { QueueInterceptor } from './endpoints/interceptors/queue.interceptor';
 
 @Module({
   imports: [
@@ -81,8 +85,19 @@ import { GMOfertaModule } from './transactions/generarMaestroDeOferta/gMOferta.m
     MaestroDeOfertasModule,
 
     OfertaGrupoMateriasModule,
+
+    // Módulos para colas dinámicas
+    ColasModule,
+    WorkersModule,
+    EndpointsModule,
   ],
   controllers: [],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: QueueInterceptor,
+    },
+  ],
   /* providers: [
     {
       //PARA PONER EL GUARD DE JWT EN TODOS LOS ENDPOINTS PERRITOUUUU

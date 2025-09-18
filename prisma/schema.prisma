@@ -304,3 +304,41 @@ model OfertaGrupoMateria {
 
   @@unique([grupoMateriaId, maestroDeOfertaId])
 }
+
+model Cola {
+  id          String     @id @default(uuid())
+  nombre      String     @unique
+  descripcion String?
+  workers     Worker[]
+  endpoints   Endpoint[]
+  estaActiva  Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Worker {
+  id           String   @id @default(uuid())
+  nombre       String
+  concurrencia Int      @default(1)
+  colaId       String
+  cola         Cola     @relation(fields: [colaId], references: [id])
+  estaActivo   Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([nombre, colaId])
+}
+
+model Endpoint {
+  id          String   @id @default(uuid())
+  ruta        String // ej: "/api/carreras"
+  metodo      String // ej: "GET", "POST", "PUT", "DELETE"
+  descripcion String?
+  colaId      String
+  cola        Cola     @relation(fields: [colaId], references: [id])
+  estaActivo  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([ruta, metodo])
+}
