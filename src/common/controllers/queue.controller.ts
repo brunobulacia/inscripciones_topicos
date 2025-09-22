@@ -15,7 +15,7 @@ import { QUEUE_NAMES } from '../types/queue.types';
 @Controller('queue')
 export class QueueController {
   constructor(
-    @InjectQueue(QUEUE_NAMES.INSCRIPCIONES)
+    @InjectQueue()
     private readonly inscripcionesQueue: Queue,
   ) {}
 

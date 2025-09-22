@@ -1,5 +1,4 @@
 export const QUEUE_NAMES = {
-  INSCRIPCIONES: 'InscripcionesQueue',
   // Cola centralizada para todos los servicios
 } as const;
 

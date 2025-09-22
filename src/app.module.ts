@@ -28,8 +28,6 @@ import { BoletaGrupoMateriasModule } from './boleta_grupo_materias/boleta_grupo_
 import { DetalleInsOfertasModule } from './detalle_ins_ofertas/detalle_ins_ofertas.module';
 import { MaestroDeOfertasModule } from './maestro_de_ofertas/maestro_de_ofertas.module';
 import { OfertaGrupoMateriasModule } from './oferta_grupo_materias/oferta_grupo_materias.module';
-import { QUEUE_NAMES } from './common/types/queue.types';
-import { QueueCommonModule } from './common/queue-common.module';
 import { BullMQDashboardModule } from './bullmq-dashboard/bullmq-dashboard.module';
 import { GMOfertaModule } from './transactions/generarMaestroDeOferta/gMOferta.module';
 import { ColasModule } from './colas/colas.module';
@@ -39,8 +37,6 @@ import { QueueInterceptor } from './endpoints/interceptors/queue.interceptor';
 
 @Module({
   imports: [
-    QueueCommonModule, // Módulo global para los servicios de queue
-    BullMQDashboardModule, // Dashboard de BullMQ
     AuthModule,
     CarrerasModule,
     PlanesDeEstudioModule,
@@ -73,11 +69,6 @@ import { QueueInterceptor } from './endpoints/interceptors/queue.interceptor';
       },
     }),
 
-    // Cola centralizada para todos los servicios
-    BullModule.registerQueue({
-      name: QUEUE_NAMES.INSCRIPCIONES,
-    }),
-
     BoletaGrupoMateriasModule,
 
     DetalleInsOfertasModule,
@@ -90,6 +81,7 @@ import { QueueInterceptor } from './endpoints/interceptors/queue.interceptor';
     ColasModule,
     WorkersModule,
     EndpointsModule,
+    BullMQDashboardModule,
   ],
   controllers: [],
   providers: [

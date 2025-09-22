@@ -1,8 +1,23 @@
-import { Injectable, ConflictException, NotFoundException, Logger, Inject, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  Logger,
+  Inject,
+  InternalServerErrorException,
+  forwardRef,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateColaDto, UpdateColaDto, ColaResponseDto, CreateJobDto } from './dto';
+import {
+  CreateColaDto,
+  UpdateColaDto,
+  ColaResponseDto,
+  CreateJobDto,
+} from './dto';
 import { Queue, ConnectionOptions } from 'bullmq';
 import { BullMQDashboardService } from '../bullmq-dashboard/bullmq-dashboard.service';
+import { WorkersService } from '../workers/workers.service';
+import { EndpointsService } from '../endpoints/endpoints.service';
 
 @Injectable()
 export class ColasService {
@@ -13,6 +28,10 @@ export class ColasService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly dashboardService: BullMQDashboardService,
+    @Inject(forwardRef(() => WorkersService))
+    private readonly workersService: WorkersService,
+    @Inject(forwardRef(() => EndpointsService))
+    private readonly endpointsService: EndpointsService,
   ) {
     // Configuración de Redis usando la misma configuración del app.module
     this.redisConnection = {
@@ -27,18 +46,62 @@ export class ColasService {
     });
 
     if (existingCola) {
-      throw new ConflictException(`Cola con nombre "${createColaDto.nombre}" ya existe`);
+      throw new ConflictException(
+        `Cola con nombre "${createColaDto.nombre}" ya existe`,
+      );
     }
 
+    // Extraer workers del DTO y crear datos para la cola sin workers
+    const { workers, ...colaData } = createColaDto;
+
     const cola = await this.prisma.cola.create({
-      data: createColaDto,
+      data: colaData,
     });
 
     await this.createBullMQQueue(cola.nombre);
 
+    // Si se proporcionó array de workers, crear automáticamente los workers
+    if (workers && workers.length > 0) {
+      this.logger.log(
+        `Creando ${workers.length} workers para la cola "${cola.nombre}"`,
+      );
+
+      for (let i = 0; i < workers.length; i++) {
+        const concurrencia = workers[i];
+        const workerName = `worker-${i + 1}-${cola.nombre}`;
+
+        try {
+          await this.workersService.create({
+            nombre: workerName,
+            concurrencia: concurrencia,
+            colaId: cola.id,
+          });
+
+          this.logger.log(
+            `Worker "${workerName}" creado con concurrencia ${concurrencia} para cola "${cola.nombre}"`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Error creando worker "${workerName}" para cola "${cola.nombre}": ${error.message}`,
+          );
+          // Continuar con los demás workers aunque uno falle
+        }
+      }
+    }
+
     this.logger.log(`Cola "${cola.nombre}" creada exitosamente`);
 
-    return this.mapToResponseDto(cola);
+    // Retornar la cola con sus workers creados
+    const colaWithWorkers = await this.prisma.cola.findUnique({
+      where: { id: cola.id },
+      include: {
+        workers: {
+          where: { estaActivo: true },
+        },
+      },
+    });
+
+    return this.mapToResponseDto(colaWithWorkers);
   }
 
   async findAll(): Promise<ColaResponseDto[]> {
@@ -51,7 +114,7 @@ export class ColasService {
       },
     });
 
-    return colas.map(cola => this.mapToResponseDto(cola));
+    return colas.map((cola) => this.mapToResponseDto(cola));
   }
 
   async findOne(id: string): Promise<ColaResponseDto> {
@@ -88,7 +151,10 @@ export class ColasService {
     return this.mapToResponseDto(cola);
   }
 
-  async update(id: string, updateColaDto: UpdateColaDto): Promise<ColaResponseDto> {
+  async update(
+    id: string,
+    updateColaDto: UpdateColaDto,
+  ): Promise<ColaResponseDto> {
     const existingCola = await this.prisma.cola.findUnique({
       where: { id },
     });
@@ -104,7 +170,9 @@ export class ColasService {
       });
 
       if (colaWithSameName) {
-        throw new ConflictException(`Cola con nombre "${updateColaDto.nombre}" ya existe`);
+        throw new ConflictException(
+          `Cola con nombre "${updateColaDto.nombre}" ya existe`,
+        );
       }
     }
 
@@ -130,35 +198,93 @@ export class ColasService {
   async remove(id: string): Promise<void> {
     const cola = await this.prisma.cola.findUnique({
       where: { id },
+      include: {
+        workers: { where: { estaActivo: true } },
+        endpoints: { where: { estaActivo: true } },
+      },
     });
 
     if (!cola) {
       throw new NotFoundException(`Cola con ID "${id}" no encontrada`);
     }
 
-    // Desactivar la cola en lugar de eliminarla
+    this.logger.log(
+      `Iniciando eliminación en cascada para cola "${cola.nombre}"`,
+    );
+
+    // 1. Eliminar todos los endpoints asociados a la cola
+    if (cola.endpoints && cola.endpoints.length > 0) {
+      this.logger.log(
+        `Eliminando ${cola.endpoints.length} endpoints asociados a la cola "${cola.nombre}"`,
+      );
+
+      for (const endpoint of cola.endpoints) {
+        try {
+          await this.endpointsService.remove(endpoint.id);
+          this.logger.log(
+            `Endpoint ${endpoint.metodo} ${endpoint.ruta} eliminado exitosamente`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Error eliminando endpoint ${endpoint.metodo} ${endpoint.ruta}: ${error.message}`,
+          );
+          // Continuar con los demás endpoints aunque uno falle
+        }
+      }
+    }
+
+    // 2. Eliminar todos los workers asociados a la cola
+    if (cola.workers && cola.workers.length > 0) {
+      this.logger.log(
+        `Eliminando ${cola.workers.length} workers asociados a la cola "${cola.nombre}"`,
+      );
+
+      for (const worker of cola.workers) {
+        try {
+          await this.workersService.remove(worker.id);
+          this.logger.log(`Worker "${worker.nombre}" eliminado exitosamente`);
+        } catch (error) {
+          this.logger.error(
+            `Error eliminando worker "${worker.nombre}": ${error.message}`,
+          );
+          // Continuar con los demás workers aunque uno falle
+        }
+      }
+    }
+
+    // 3. Cerrar la cola de BullMQ antes de desactivarla
+    await this.closeBullMQQueue(cola.nombre);
+
+    // 4. Finalmente, desactivar la cola en lugar de eliminarla
     await this.prisma.cola.update({
       where: { id },
       data: { estaActiva: false },
     });
 
-    // Cerrar la cola de BullMQ
-    await this.closeBullMQQueue(cola.nombre);
-
-    this.logger.log(`Cola "${cola.nombre}" desactivada exitosamente`);
+    this.logger.log(
+      `Cola "${cola.nombre}" y todos sus recursos asociados eliminados exitosamente`,
+    );
   }
 
   // Métodos para manejar jobs en colas específicas
   async addJob(nombreCola: string, createJobDto: CreateJobDto): Promise<any> {
     const queue = this.dinamicQueues.get(nombreCola);
     if (!queue) {
-      throw new NotFoundException(`Cola "${nombreCola}" no encontrada o no activa`);
+      throw new NotFoundException(
+        `Cola "${nombreCola}" no encontrada o no activa`,
+      );
     }
 
-    const job = await queue.add(createJobDto.name, createJobDto.data, createJobDto.opts);
-    
-    this.logger.log(`Job "${createJobDto.name}" agregado a la cola "${nombreCola}"`);
-    
+    const job = await queue.add(
+      createJobDto.name,
+      createJobDto.data,
+      createJobDto.opts,
+    );
+
+    this.logger.log(
+      `Job "${createJobDto.name}" agregado a la cola "${nombreCola}"`,
+    );
+
     return {
       id: job.id,
       name: job.name,
@@ -170,7 +296,9 @@ export class ColasService {
   async getQueueStats(nombreCola: string): Promise<any> {
     const queue = this.dinamicQueues.get(nombreCola);
     if (!queue) {
-      throw new NotFoundException(`Cola "${nombreCola}" no encontrada o no activa`);
+      throw new NotFoundException(
+        `Cola "${nombreCola}" no encontrada o no activa`,
+      );
     }
 
     const waiting = await queue.getWaiting();
@@ -186,12 +314,12 @@ export class ColasService {
         completed: completed.length,
         failed: failed.length,
       },
-      waiting: waiting.map(job => ({
+      waiting: waiting.map((job) => ({
         id: job.id,
         name: job.name,
         data: job.data,
       })),
-      active: active.map(job => ({
+      active: active.map((job) => ({
         id: job.id,
         name: job.name,
         data: job.data,
@@ -199,10 +327,15 @@ export class ColasService {
     };
   }
 
-  async getQueueJobs(nombreCola: string, status: 'waiting' | 'active' | 'completed' | 'failed' = 'waiting'): Promise<any[]> {
+  async getQueueJobs(
+    nombreCola: string,
+    status: 'waiting' | 'active' | 'completed' | 'failed' = 'waiting',
+  ): Promise<any[]> {
     const queue = this.dinamicQueues.get(nombreCola);
     if (!queue) {
-      throw new NotFoundException(`Cola "${nombreCola}" no encontrada o no activa`);
+      throw new NotFoundException(
+        `Cola "${nombreCola}" no encontrada o no activa`,
+      );
     }
 
     let jobs;
@@ -223,7 +356,7 @@ export class ColasService {
         jobs = await queue.getWaiting();
     }
 
-    return jobs.map(job => ({
+    return jobs.map((job) => ({
       id: job.id,
       name: job.name,
       data: job.data,
@@ -251,7 +384,9 @@ export class ColasService {
       this.dinamicQueues.set(nombreCola, queue);
       this.dashboardService.addQueue(queue);
 
-      this.logger.log(`Cola BullMQ "${nombreCola}" creada y registrada en el dashboard`);
+      this.logger.log(
+        `Cola BullMQ "${nombreCola}" creada y registrada en el dashboard`,
+      );
     } catch (error) {
       this.logger.error(`Error creando cola BullMQ "${nombreCola}":`, error);
       throw error;
@@ -265,7 +400,9 @@ export class ColasService {
         await queue.close();
         this.dinamicQueues.delete(nombreCola);
         this.dashboardService.removeQueue(nombreCola);
-        this.logger.log(`Cola BullMQ "${nombreCola}" cerrada y removida del dashboard`);
+        this.logger.log(
+          `Cola BullMQ "${nombreCola}" cerrada y removida del dashboard`,
+        );
       }
     } catch (error) {
       this.logger.error(`Error cerrando cola BullMQ "${nombreCola}":`, error);
@@ -296,12 +433,17 @@ export class ColasService {
     this.logger.log(`${colasActivas.length} colas existentes inicializadas`);
   }
 
+  // Método para obtener las colas dinámicas (solo lectura)
+  getDinamicQueues(): ReadonlyMap<string, Queue> {
+    return this.dinamicQueues;
+  }
+
   // Métodos para consultar jobs
   async getJobById(jobId: string): Promise<any> {
     try {
       // Buscar en todas las colas activas
       const colas = await this.prisma.cola.findMany({
-        where: { estaActiva: true }
+        where: { estaActiva: true },
       });
 
       for (const cola of colas) {
@@ -323,7 +465,7 @@ export class ColasService {
             returnValue: job.returnvalue,
             queueName: cola.nombre,
             timestamp: job.timestamp,
-            opts: job.opts
+            opts: job.opts,
           };
         }
       }
@@ -333,7 +475,9 @@ export class ColasService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new InternalServerErrorException(`Error fetching job: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Error fetching job: ${error.message}`,
+      );
     }
   }
 
@@ -349,7 +493,7 @@ export class ColasService {
         processedAt: job.processedOn ? new Date(job.processedOn) : null,
         completedAt: job.finishedOn ? new Date(job.finishedOn) : null,
         result: job.returnValue,
-        error: job.failedReason
+        error: job.failedReason,
       };
     } catch (error) {
       throw error;
@@ -357,31 +501,37 @@ export class ColasService {
   }
 
   // Métodos para limpiar y sincronizar Redis
-  async cleanupRedis(): Promise<{ message: string, cleaned: string[], kept: string[] }> {
+  async cleanupRedis(): Promise<{
+    message: string;
+    cleaned: string[];
+    kept: string[];
+  }> {
     try {
       const Redis = require('ioredis');
       const redis = new Redis(this.redisConnection);
-      
+
       // Obtener todas las colas activas de la base de datos
       const colasActivas = await this.prisma.cola.findMany({
         where: { estaActiva: true },
-        select: { nombre: true }
+        select: { nombre: true },
       });
-      
-      const colasActivasNombres = new Set(colasActivas.map(cola => cola.nombre));
-      
+
+      const colasActivasNombres = new Set(
+        colasActivas.map((cola) => cola.nombre),
+      );
+
       // Obtener todas las claves de Redis relacionadas con BullMQ
       const keys = await redis.keys('bull:*');
-      
+
       const cleaned: string[] = [];
       const kept: string[] = [];
-      
+
       for (const key of keys) {
         // Extraer el nombre de la cola de la clave de Redis
         const parts = key.split(':');
         if (parts.length >= 2) {
           const queueName = parts[1];
-          
+
           // Si la cola no está activa en la base de datos, eliminarla de Redis
           if (!colasActivasNombres.has(queueName)) {
             await redis.del(key);
@@ -392,42 +542,51 @@ export class ColasService {
           }
         }
       }
-      
+
       // También cerrar las colas de BullMQ que no deberían existir
       for (const [nombre, queue] of this.dinamicQueues.entries()) {
         if (!colasActivasNombres.has(nombre)) {
           await queue.close();
           this.dinamicQueues.delete(nombre);
-          this.logger.log(`🔌 Cola BullMQ "${nombre}" cerrada y eliminada del mapa`);
+          this.logger.log(
+            `🔌 Cola BullMQ "${nombre}" cerrada y eliminada del mapa`,
+          );
         }
       }
-      
+
       await redis.quit();
-      
-      this.logger.log(`🧹 Limpieza de Redis completada. Eliminadas: ${cleaned.length}, Mantenidas: ${kept.length}`);
-      
+
+      this.logger.log(
+        `🧹 Limpieza de Redis completada. Eliminadas: ${cleaned.length}, Mantenidas: ${kept.length}`,
+      );
+
       return {
         message: 'Limpieza de Redis completada exitosamente',
         cleaned,
-        kept
+        kept,
       };
-      
     } catch (error) {
       this.logger.error('Error durante la limpieza de Redis:', error);
-      throw new InternalServerErrorException(`Error cleaning Redis: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Error cleaning Redis: ${error.message}`,
+      );
     }
   }
 
-  async syncWithDatabase(): Promise<{ message: string, synced: string[], errors: string[] }> {
+  async syncWithDatabase(): Promise<{
+    message: string;
+    synced: string[];
+    errors: string[];
+  }> {
     try {
       // Obtener todas las colas activas de la base de datos
       const colasActivas = await this.prisma.cola.findMany({
-        where: { estaActiva: true }
+        where: { estaActiva: true },
       });
-      
+
       const synced: string[] = [];
       const errors: string[] = [];
-      
+
       // Recrear las colas que deberían existir pero no están en el mapa
       for (const cola of colasActivas) {
         try {
@@ -437,39 +596,43 @@ export class ColasService {
             this.logger.log(`🔄 Cola "${cola.nombre}" recreada en BullMQ`);
           }
         } catch (error) {
-          errors.push(`Error recreando cola "${cola.nombre}": ${error.message}`);
+          errors.push(
+            `Error recreando cola "${cola.nombre}": ${error.message}`,
+          );
           this.logger.error(`Error recreando cola "${cola.nombre}":`, error);
         }
       }
-      
-      this.logger.log(`🔄 Sincronización completada. Sincronizadas: ${synced.length}, Errores: ${errors.length}`);
-      
+
+      this.logger.log(
+        `🔄 Sincronización completada. Sincronizadas: ${synced.length}, Errores: ${errors.length}`,
+      );
+
       return {
         message: 'Sincronización con base de datos completada',
         synced,
-        errors
+        errors,
       };
-      
     } catch (error) {
       this.logger.error('Error durante la sincronización:', error);
-      throw new InternalServerErrorException(`Error syncing with database: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Error syncing with database: ${error.message}`,
+      );
     }
   }
 
   async fullCleanupAndSync(): Promise<any> {
     try {
       this.logger.log('🚀 Iniciando limpieza completa y sincronización...');
-      
+
       const cleanupResult = await this.cleanupRedis();
       const syncResult = await this.syncWithDatabase();
-      
+
       return {
         message: 'Limpieza completa y sincronización exitosa',
         cleanup: cleanupResult,
         sync: syncResult,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
     } catch (error) {
       this.logger.error('Error durante limpieza completa:', error);
       throw error;

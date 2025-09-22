@@ -1,6 +1,15 @@
-import { IsString, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  MinLength,
+  IsArray,
+  IsNumber,
+  Min,
+  ArrayNotEmpty,
+} from 'class-validator';
 
-export class CreateColaDto {
+export class BaseColaDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(1)
@@ -9,4 +18,13 @@ export class CreateColaDto {
   @IsString()
   @IsOptional()
   descripcion?: string;
+}
+
+export class CreateColaDto extends BaseColaDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsNumber({}, { each: true })
+  @Min(1, { each: true })
+  @IsOptional()
+  workers?: number[];
 }
