@@ -23,9 +23,7 @@ import {
 @ApiBearerAuth()
 @Controller('carreras')
 export class CarrerasController {
-  constructor(
-    private readonly carrerasService: CarrerasService,
-  ) {}
+  constructor(private readonly carrerasService: CarrerasService) {}
 
   @Get()
   @ApiOperation({ summary: 'Obtener todas las carreras' })
@@ -147,6 +145,35 @@ export class CarrerasController {
     },
   })
   remove(@Param('id') id: string) {
+    return this.carrerasService.remove(id);
+  }
+
+  // METODOS ASINCRONOS VIA COLAS (BULLMQ)
+  @Get('/async/')
+  findAllAsync() {
+    return this.carrerasService.findAll();
+  }
+
+  @Get('/async/:id')
+  findOneAsync(@Param('id') id: string) {
+    return this.carrerasService.findOne(id);
+  }
+
+  @Post('/async/')
+  createAsync(@Body() createCarreraDto: CreateCarreraDto) {
+    return this.carrerasService.create(createCarreraDto);
+  }
+
+  @Patch('/async/:id')
+  updateAsync(
+    @Param('id') id: string,
+    @Body() updateCarreraDto: UpdateCarreraDto,
+  ) {
+    return this.carrerasService.update(id, updateCarreraDto);
+  }
+
+  @Delete('/async/:id')
+  removeAsync(@Param('id') id: string) {
     return this.carrerasService.remove(id);
   }
 }

@@ -4,13 +4,9 @@ import { CarrerasController } from './carreras.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-  ],
+  imports: [PrismaModule],
   controllers: [CarrerasController],
-  providers: [
-    CarrerasService,
-  ],
+  providers: [CarrerasService],
   exports: [CarrerasService],
 })
 export class CarrerasModule {}

@@ -2,6 +2,8 @@ import {
   Injectable,
   NotAcceptableException,
   NotFoundException,
+  ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { CreateMateriaDto } from './dto/create-materia.dto';
 import { UpdateMateriaDto } from './dto/update-materia.dto';
@@ -13,72 +15,172 @@ export class MateriasService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async create(createMateriaDto: CreateMateriaDto): Promise<Materia> {
-    const createdMateria = await this.prismaService.materia.create({
-      data: createMateriaDto,
-    });
+    try {
+      // Verificar si ya existe una materia con la misma sigla
+      const existingMateria = await this.prismaService.materia.findFirst({
+        where: {
+          sigla: createMateriaDto.sigla,
+          estaActiva: true,
+        },
+      });
 
-    if (!createdMateria) {
-      throw new NotAcceptableException('Materia not created');
+      if (existingMateria) {
+        throw new ConflictException(
+          `Ya existe una materia con la sigla "${createMateriaDto.sigla}"`,
+        );
+      }
+
+      const createdMateria = await this.prismaService.materia.create({
+        data: createMateriaDto,
+      });
+
+      if (!createdMateria) {
+        throw new NotAcceptableException('Error al crear la materia');
+      }
+
+      return createdMateria;
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      if (error.code === 'P2002') {
+        throw new ConflictException('La sigla de materia ya existe');
+      }
+      if (error.code === 'P2003') {
+        throw new BadRequestException(
+          'Referencias inválidas: verifica el nivel y plan de estudio',
+        );
+      }
+      throw new NotAcceptableException('Error al crear la materia');
     }
-
-    return createdMateria;
   }
 
   async findAll(): Promise<any[]> {
-    return this.prismaService.materia.findMany({
-      where: { estaActiva: true },
-      include: {
-        planDeEstudio: { select: { carrera: true, version: true } },
-        nivel: true,
-      },
-    });
+    try {
+      return await this.prismaService.materia.findMany({
+        where: { estaActiva: true },
+        include: {
+          planDeEstudio: { select: { carrera: true, version: true } },
+          nivel: true,
+        },
+        orderBy: { nombre: 'asc' },
+      });
+    } catch (error) {
+      throw new NotAcceptableException('Error al obtener las materias');
+    }
   }
 
-  //NOS QUEDAMOS AQUI EN ARMAR LA MALLA DE INFORMATICA
-  //HAY QUE HACER PAGINACION
-
   async findOne(id: string): Promise<Materia | null> {
-    const foundMateria = await this.prismaService.materia.findUnique({
-      where: { id, estaActiva: true },
-      /* include: {
-        siglaMateria: {},
-        siglaPrerequisito: { select: { siglaPrerequisito: true } },
-      }, */
-    });
+    try {
+      const foundMateria = await this.prismaService.materia.findUnique({
+        where: { id, estaActiva: true },
+        include: {
+          planDeEstudio: { select: { carrera: true, version: true } },
+          nivel: true,
+        },
+      });
 
-    if (!foundMateria) {
-      throw new NotFoundException('Materia no encontrada');
+      if (!foundMateria) {
+        throw new NotFoundException('Materia no encontrada');
+      }
+
+      return foundMateria;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new NotAcceptableException('Error al buscar la materia');
     }
-
-    return foundMateria;
   }
 
   async update(
     id: string,
     updateMateriaDto: UpdateMateriaDto,
   ): Promise<Materia | null> {
-    const updatedMateria = await this.prismaService.materia.update({
-      where: { id },
-      data: updateMateriaDto,
-    });
+    try {
+      // Verificar si la materia existe
+      const existingMateria = await this.prismaService.materia.findUnique({
+        where: { id, estaActiva: true },
+      });
 
-    if (!updatedMateria) {
-      throw new NotFoundException('Materia no encontrada');
+      if (!existingMateria) {
+        throw new NotFoundException('Materia no encontrada');
+      }
+
+      // Si se está actualizando la sigla, verificar que no exista otra con la misma sigla
+      if (
+        updateMateriaDto.sigla &&
+        updateMateriaDto.sigla !== existingMateria.sigla
+      ) {
+        const materiaWithSigla = await this.prismaService.materia.findFirst({
+          where: {
+            sigla: updateMateriaDto.sigla,
+            id: { not: id },
+            estaActiva: true,
+          },
+        });
+
+        if (materiaWithSigla) {
+          throw new ConflictException(
+            `Ya existe una materia con la sigla "${updateMateriaDto.sigla}"`,
+          );
+        }
+      }
+
+      const updatedMateria = await this.prismaService.materia.update({
+        where: { id },
+        data: updateMateriaDto,
+      });
+
+      return updatedMateria;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      if (error.code === 'P2002') {
+        throw new ConflictException('La sigla de materia ya existe');
+      }
+      if (error.code === 'P2003') {
+        throw new BadRequestException(
+          'Referencias inválidas: verifica el nivel y plan de estudio',
+        );
+      }
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Materia no encontrada');
+      }
+      throw new NotAcceptableException('Error al actualizar la materia');
     }
-
-    return updatedMateria;
   }
 
-  async remove(id: string): Promise<Materia | null> {
-    const deletedMateria = await this.prismaService.materia.update({
-      where: { id },
-      data: { estaActiva: false },
-    });
+  async remove(id: string): Promise<{ message: string }> {
+    try {
+      const existingMateria = await this.prismaService.materia.findUnique({
+        where: { id, estaActiva: true },
+      });
 
-    if (!deletedMateria) {
-      throw new NotAcceptableException('Materia no eliminada');
+      if (!existingMateria) {
+        throw new NotFoundException('Materia no encontrada');
+      }
+
+      await this.prismaService.materia.update({
+        where: { id },
+        data: { estaActiva: false },
+      });
+
+      return {
+        message: 'Materia eliminada exitosamente',
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Materia no encontrada');
+      }
+      throw new NotAcceptableException('Error al eliminar la materia');
     }
-
-    return deletedMateria;
   }
 }

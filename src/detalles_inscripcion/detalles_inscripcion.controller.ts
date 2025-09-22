@@ -8,7 +8,6 @@ import {
   Delete,
 } from '@nestjs/common';
 import { DetallesInscripcionService } from './detalles_inscripcion.service';
-import { DetalleInscripcionQueueService } from './services/detalle-inscripcion-queue.service';
 import type { CreateDetalleInscripcionDto } from './dto/create-detalle_inscripcion.dto';
 import type { UpdateDetalleInscripcionDto } from './dto/update-detalle_inscripcion.dto';
 import {
@@ -26,13 +25,11 @@ import {
 export class DetallesInscripcionController {
   constructor(
     private readonly detallesInscripcionService: DetallesInscripcionService,
-    private readonly detalleInscripcionQueueService: DetalleInscripcionQueueService,
   ) {}
 
-  //METODOS SINCRONOS
-  @Get('/sync')
+  @Get()
   @ApiOperation({
-    summary: 'Obtener todos los detalles de inscripción (sincrónico)',
+    summary: 'Obtener todos los detalles de inscripción',
   })
   @ApiResponse({
     status: 200,
@@ -56,9 +53,9 @@ export class DetallesInscripcionController {
     return this.detallesInscripcionService.findAll();
   }
 
-  @Get('/sync/:id')
+  @Get(':id')
   @ApiOperation({
-    summary: 'Obtener detalle de inscripción por ID (sincrónico)',
+    summary: 'Obtener detalle de inscripción por ID',
   })
   @ApiParam({
     name: 'id',
@@ -88,8 +85,8 @@ export class DetallesInscripcionController {
     return this.detallesInscripcionService.findOne(id);
   }
 
-  @Post('/sync')
-  @ApiOperation({ summary: 'Crear nuevo detalle de inscripción (sincrónico)' })
+  @Post()
+  @ApiOperation({ summary: 'Crear nuevo detalle de inscripción' })
   @ApiBody({
     description: 'Datos del detalle de inscripción a crear',
     schema: {
@@ -121,8 +118,8 @@ export class DetallesInscripcionController {
     return this.detallesInscripcionService.create(createDetalleInscripcionDto);
   }
 
-  @Patch('/sync/:id')
-  @ApiOperation({ summary: 'Actualizar detalle de inscripción (sincrónico)' })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar detalle de inscripción' })
   @ApiParam({
     name: 'id',
     description: 'ID del detalle de inscripción',
@@ -169,8 +166,8 @@ export class DetallesInscripcionController {
     );
   }
 
-  @Delete('/sync/:id')
-  @ApiOperation({ summary: 'Eliminar detalle de inscripción (sincrónico)' })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar detalle de inscripción' })
   @ApiParam({
     name: 'id',
     description: 'ID del detalle de inscripción',
@@ -197,7 +194,6 @@ export class DetallesInscripcionController {
     return this.detallesInscripcionService.remove(id);
   }
 
-  //METODOS ASINCRONOS
   @Post('/async')
   @ApiOperation({ summary: 'Crear nuevo detalle de inscripción (asíncrono)' })
   @ApiBody({
@@ -212,31 +208,14 @@ export class DetallesInscripcionController {
     },
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para crear detalle de inscripción',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para crear detalle de inscripción',
-        },
-      },
-    },
+    status: 201,
+    description: 'Detalle de inscripción creado exitosamente',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   async createQueue(
     @Body() createDetalleInscripcionDto: CreateDetalleInscripcionDto,
   ) {
-    const result =
-      await this.detalleInscripcionQueueService.createDetalleInscripcion(
-        createDetalleInscripcionDto,
-      );
-    return {
-      ...result,
-      message: 'Job encolado para crear detalle de inscripción',
-    };
+    return this.detallesInscripcionService.create(createDetalleInscripcionDto);
   }
 
   @Get('/async')
@@ -244,26 +223,11 @@ export class DetallesInscripcionController {
     summary: 'Obtener todos los detalles de inscripción (asíncrono)',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener detalles de inscripción',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener detalles de inscripción',
-        },
-      },
-    },
+    status: 200,
+    description: 'Detalles de inscripción obtenidos exitosamente',
   })
   async findAllQueue() {
-    const result =
-      await this.detalleInscripcionQueueService.findAllDetalleInscripciones();
-    return {
-      ...result,
-      message: 'Job encolado para obtener detalles de inscripción',
-    };
+    return this.detallesInscripcionService.findAll();
   }
 
   @Get('/async/:id')
@@ -276,30 +240,15 @@ export class DetallesInscripcionController {
     example: 'uuid-example',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener detalle de inscripción',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener detalle de inscripción',
-        },
-      },
-    },
+    status: 200,
+    description: 'Detalle de inscripción obtenido exitosamente',
   })
   @ApiResponse({
     status: 404,
     description: 'Detalle de inscripción no encontrado',
   })
   async findOneQueue(@Param('id') id: string) {
-    const result =
-      await this.detalleInscripcionQueueService.findOneDetalleInscripcion(id);
-    return {
-      ...result,
-      message: 'Job encolado para obtener detalle de inscripción',
-    };
+    return this.detallesInscripcionService.findOne(id);
   }
 
   @Patch('/async/:id')
@@ -321,18 +270,8 @@ export class DetallesInscripcionController {
     },
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para actualizar detalle de inscripción',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para actualizar detalle de inscripción',
-        },
-      },
-    },
+    status: 200,
+    description: 'Detalle de inscripción actualizado exitosamente',
   })
   @ApiResponse({
     status: 404,
@@ -343,15 +282,10 @@ export class DetallesInscripcionController {
     @Param('id') id: string,
     @Body() updateDetalleInscripcionDto: UpdateDetalleInscripcionDto,
   ) {
-    const result =
-      await this.detalleInscripcionQueueService.updateDetalleInscripcion(
-        id,
-        updateDetalleInscripcionDto,
-      );
-    return {
-      ...result,
-      message: 'Job encolado para actualizar detalle de inscripción',
-    };
+    return this.detallesInscripcionService.update(
+      id,
+      updateDetalleInscripcionDto,
+    );
   }
 
   @Delete('/async/:id')
@@ -362,29 +296,14 @@ export class DetallesInscripcionController {
     example: 'uuid-example',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para eliminar detalle de inscripción',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para eliminar detalle de inscripción',
-        },
-      },
-    },
+    status: 200,
+    description: 'Detalle de inscripción eliminado exitosamente',
   })
   @ApiResponse({
     status: 404,
     description: 'Detalle de inscripción no encontrado',
   })
   async removeQueue(@Param('id') id: string) {
-    const result =
-      await this.detalleInscripcionQueueService.deleteDetalleInscripcion(id);
-    return {
-      ...result,
-      message: 'Job encolado para eliminar detalle de inscripción',
-    };
+    return this.detallesInscripcionService.remove(id);
   }
 }

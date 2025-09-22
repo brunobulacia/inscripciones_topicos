@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   NotAcceptableException,
   NotFoundException,
@@ -15,18 +16,23 @@ export class DetalleInsOfertasService {
   async create(
     createDetalleInsOfertaDto: CreateDetalleInsOfertaDto,
   ): Promise<DetalleInsOferta> {
-    const createdDetalleInsOferta =
-      await this.prismaService.detalleInsOferta.create({
-        data: createDetalleInsOfertaDto,
-      });
+    try {
+      const createdDetalleInsOferta =
+        await this.prismaService.detalleInsOferta.create({
+          data: createDetalleInsOfertaDto,
+        });
 
-    if (!createdDetalleInsOferta) {
+      return createdDetalleInsOferta;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe un detalle ins oferta con esos datos únicos',
+        );
+      }
       throw new NotAcceptableException(
         'No se pudo crear el detalle ins oferta',
       );
     }
-
-    return createdDetalleInsOferta;
   }
 
   async findAll(): Promise<DetalleInsOferta[]> {
@@ -56,30 +62,40 @@ export class DetalleInsOfertasService {
     id: string,
     updateDetalleInsOfertaDto: UpdateDetalleInsOfertaDto,
   ): Promise<DetalleInsOferta> {
-    const updatedDetalleInsOferta =
-      await this.prismaService.detalleInsOferta.update({
-        where: { id },
-        data: updateDetalleInsOfertaDto,
-      });
+    try {
+      const updatedDetalleInsOferta =
+        await this.prismaService.detalleInsOferta.update({
+          where: { id },
+          data: updateDetalleInsOfertaDto,
+        });
 
-    if (!updatedDetalleInsOferta) {
-      throw new NotFoundException('Detalle ins oferta no encontrado');
+      return updatedDetalleInsOferta;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe un detalle ins oferta con esos datos únicos',
+        );
+      }
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Detalle ins oferta no encontrado');
+      }
+      throw error;
     }
-
-    return updatedDetalleInsOferta;
   }
 
-  async remove(id: string): Promise<DetalleInsOferta> {
-    const deletedDetalleInsOferta =
+  async remove(id: string): Promise<{ message: string }> {
+    try {
       await this.prismaService.detalleInsOferta.update({
         where: { id },
         data: { estaActivo: false },
       });
 
-    if (!deletedDetalleInsOferta) {
-      throw new NotFoundException('Detalle ins oferta no encontrado');
+      return { message: 'Detalle ins oferta eliminado exitosamente' };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Detalle ins oferta no encontrado');
+      }
+      throw error;
     }
-
-    return deletedDetalleInsOferta;
   }
 }

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotAcceptableException,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { CreateOfertaGrupoMateriaDto } from './dto/create-oferta_grupo_materia.dto';
 import { UpdateOfertaGrupoMateriaDto } from './dto/update-oferta_grupo_materia.dto';
@@ -15,18 +16,34 @@ export class OfertaGrupoMateriasService {
   async create(
     createOfertaGrupoMateriaDto: CreateOfertaGrupoMateriaDto,
   ): Promise<OfertaGrupoMateria> {
-    const createdOfertaGrupoMateria =
-      await this.prismaService.ofertaGrupoMateria.create({
-        data: createOfertaGrupoMateriaDto,
-      });
+    try {
+      const createdOfertaGrupoMateria =
+        await this.prismaService.ofertaGrupoMateria.create({
+          data: createOfertaGrupoMateriaDto,
+        });
 
-    if (!createdOfertaGrupoMateria) {
-      throw new NotAcceptableException(
-        'No se pudo crear la oferta grupo materia',
-      );
+      if (!createdOfertaGrupoMateria) {
+        throw new NotAcceptableException('Error al crear oferta grupo materia');
+      }
+
+      return createdOfertaGrupoMateria;
+    } catch (error: any) {
+      // Prisma unique constraint error code P2002
+      if (error?.code === 'P2002') {
+        // Determine which field caused the conflict if available
+        const target = error?.meta?.target ?? [];
+        const field =
+          Array.isArray(target) && target.length > 0
+            ? target[0]
+            : 'campo único';
+        throw new ConflictException(
+          `Ya existe una oferta grupo materia con el ${field}`,
+        );
+      }
+
+      // Re-throw other unexpected errors
+      throw error;
     }
-
-    return createdOfertaGrupoMateria;
   }
 
   async findAll(): Promise<OfertaGrupoMateria[]> {
@@ -46,7 +63,9 @@ export class OfertaGrupoMateriasService {
       });
 
     if (!foundOfertaGrupoMateria) {
-      throw new NotFoundException('Oferta grupo materia no encontrada');
+      throw new NotFoundException(
+        `Oferta grupo materia con id ${id} no encontrada`,
+      );
     }
 
     return foundOfertaGrupoMateria;
@@ -63,7 +82,7 @@ export class OfertaGrupoMateriasService {
       });
 
     if (!updatedOfertaGrupoMateria) {
-      throw new NotFoundException('Oferta grupo materia no encontrada');
+      throw new NotFoundException('Error al actualizar oferta grupo materia');
     }
 
     return updatedOfertaGrupoMateria;
@@ -77,7 +96,7 @@ export class OfertaGrupoMateriasService {
       });
 
     if (!deletedOfertaGrupoMateria) {
-      throw new NotFoundException('Oferta grupo materia no encontrada');
+      throw new NotFoundException('Error al borrar oferta grupo materia');
     }
 
     return deletedOfertaGrupoMateria;

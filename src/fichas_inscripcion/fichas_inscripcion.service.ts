@@ -1,6 +1,6 @@
 import {
   Injectable,
-  NotAcceptableException,
+  ConflictException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -15,13 +15,21 @@ export class FichasInscripcionService {
   async create(
     createFichaInscripcionDto: CreateFichaInscripcionDto,
   ): Promise<FichaInscripcion> {
-    const createdFichaInscripcion =
-      await this.prismaService.fichaInscripcion.create({
-        data: createFichaInscripcionDto,
-      });
-    if (!createdFichaInscripcion)
-      throw new NotAcceptableException('Error creando ficha de inscripción');
-    return createdFichaInscripcion;
+    try {
+      const createdFichaInscripcion =
+        await this.prismaService.fichaInscripcion.create({
+          data: createFichaInscripcionDto,
+        });
+
+      return createdFichaInscripcion;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe una ficha de inscripción con estos datos',
+        );
+      }
+      throw error;
+    }
   }
 
   async findAll(): Promise<FichaInscripcion[]> {
@@ -39,8 +47,11 @@ export class FichasInscripcionService {
       await this.prismaService.fichaInscripcion.findUnique({
         where: { id, estaActivo: true },
       });
-    if (!foundFichaInscripcion)
+
+    if (!foundFichaInscripcion) {
       throw new NotFoundException('Ficha de inscripción no encontrada');
+    }
+
     return foundFichaInscripcion;
   }
 
@@ -48,24 +59,40 @@ export class FichasInscripcionService {
     id: string,
     updateFichaInscripcionDto: UpdateFichaInscripcionDto,
   ): Promise<FichaInscripcion> {
-    const updatedFichaInscripcion =
-      await this.prismaService.fichaInscripcion.update({
-        where: { id },
-        data: updateFichaInscripcionDto,
-      });
-    if (!updatedFichaInscripcion)
-      throw new NotFoundException('Ficha de inscripción no encontrada');
-    return updatedFichaInscripcion;
+    try {
+      const updatedFichaInscripcion =
+        await this.prismaService.fichaInscripcion.update({
+          where: { id },
+          data: updateFichaInscripcionDto,
+        });
+
+      return updatedFichaInscripcion;
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Ficha de inscripción no encontrada');
+      }
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe una ficha de inscripción con estos datos',
+        );
+      }
+      throw error;
+    }
   }
 
-  async remove(id: string): Promise<FichaInscripcion> {
-    const deletedFichaInscripcion =
+  async remove(id: string): Promise<{ message: string }> {
+    try {
       await this.prismaService.fichaInscripcion.update({
         where: { id },
         data: { estaActivo: false },
       });
-    if (!deletedFichaInscripcion)
-      throw new NotFoundException('Ficha de inscripción no encontrada');
-    return deletedFichaInscripcion;
+
+      return { message: 'Ficha de inscripción eliminada exitosamente' };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Ficha de inscripción no encontrada');
+      }
+      throw error;
+    }
   }
 }

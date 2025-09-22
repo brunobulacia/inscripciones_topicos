@@ -2,7 +2,6 @@ import { Injectable, ConflictException, NotFoundException, Logger, Inject, forwa
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWorkerDto, UpdateWorkerDto, WorkerResponseDto } from './dto';
 import { Worker } from 'bullmq';
-import { ColasService } from '../colas/colas.service';
 import { EndpointExecutorService } from '../endpoints/services/endpoint-executor.service';
 
 @Injectable()

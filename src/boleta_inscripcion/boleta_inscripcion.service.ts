@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   NotAcceptableException,
   NotFoundException,
@@ -15,13 +16,20 @@ export class BoletaInscripcionService {
   async create(
     createBoletaInscripcionDto: CreateBoletaInscripcionDto,
   ): Promise<BoletaInscripcion> {
-    const createdBoletaInscripcion =
-      await this.prismaService.boletaInscripcion.create({
-        data: createBoletaInscripcionDto,
-      });
-    if (!createdBoletaInscripcion)
+    try {
+      const createdBoletaInscripcion =
+        await this.prismaService.boletaInscripcion.create({
+          data: createBoletaInscripcionDto,
+        });
+      return createdBoletaInscripcion;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe una boleta de inscripción con esos datos únicos',
+        );
+      }
       throw new NotAcceptableException('Error creando boleta de inscripción');
-    return createdBoletaInscripcion;
+    }
   }
 
   async findAll(): Promise<BoletaInscripcion[]> {
@@ -44,23 +52,37 @@ export class BoletaInscripcionService {
     id: string,
     updateBoletaInscripcionDto: UpdateBoletaInscripcionDto,
   ): Promise<BoletaInscripcion> {
-    const updated = await this.prismaService.boletaInscripcion.update({
-      where: { id },
-      data: updateBoletaInscripcionDto,
-    });
-    if (!updated)
-      throw new NotFoundException('Boleta de inscripción no encontrada');
-    return updated;
+    try {
+      const updated = await this.prismaService.boletaInscripcion.update({
+        where: { id },
+        data: updateBoletaInscripcionDto,
+      });
+      return updated;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe una boleta de inscripción con esos datos únicos',
+        );
+      }
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Boleta de inscripción no encontrada');
+      }
+      throw error;
+    }
   }
 
-  async remove(id: string): Promise<BoletaInscripcion> {
-    const deletedBoletaInscripcion =
+  async remove(id: string): Promise<{ message: string }> {
+    try {
       await this.prismaService.boletaInscripcion.update({
         where: { id },
         data: { estaActivo: false },
       });
-    if (!deletedBoletaInscripcion)
-      throw new NotFoundException('Boleta de inscripción no encontrada');
-    return deletedBoletaInscripcion;
+      return { message: 'Boleta de inscripción eliminada exitosamente' };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Boleta de inscripción no encontrada');
+      }
+      throw error;
+    }
   }
 }

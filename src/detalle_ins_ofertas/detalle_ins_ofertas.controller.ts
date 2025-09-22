@@ -20,7 +20,6 @@ import {
   ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
-import { DetalleInsOfertaQueueService } from './services/detalle-ins-oferta-queue.service';
 
 @ApiTags('detalle-ins-ofertas')
 @ApiBearerAuth()
@@ -28,13 +27,11 @@ import { DetalleInsOfertaQueueService } from './services/detalle-ins-oferta-queu
 export class DetalleInsOfertasController {
   constructor(
     private readonly detalleInsOfertasService: DetalleInsOfertasService,
-    private readonly detalleInsOfertaQueueService: DetalleInsOfertaQueueService,
   ) {}
 
-  //METODOS SINCRONOS
-  @Get('/sync')
+  @Get()
   @ApiOperation({
-    summary: 'Obtener todos los detalles ins ofertas (sincrónico)',
+    summary: 'Obtener todos los detalles ins ofertas',
   })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -66,8 +63,8 @@ export class DetalleInsOfertasController {
     return this.detalleInsOfertasService.findAll();
   }
 
-  @Get('/sync/:id')
-  @ApiOperation({ summary: 'Obtener detalle ins oferta por ID (sincrónico)' })
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener detalle ins oferta por ID' })
   @ApiParam({
     name: 'id',
     description: 'ID del detalle ins oferta',
@@ -99,8 +96,8 @@ export class DetalleInsOfertasController {
     return this.detalleInsOfertasService.findOne(id);
   }
 
-  @Post('/sync')
-  @ApiOperation({ summary: 'Crear nuevo detalle ins oferta (sincrónico)' })
+  @Post()
+  @ApiOperation({ summary: 'Crear nuevo detalle ins oferta' })
   @ApiBody({
     description: 'Datos del detalle ins oferta a crear',
     schema: {
@@ -144,8 +141,8 @@ export class DetalleInsOfertasController {
     return this.detalleInsOfertasService.create(createDetalleInsOfertaDto);
   }
 
-  @Patch('/sync/:id')
-  @ApiOperation({ summary: 'Actualizar detalle ins oferta (sincrónico)' })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar detalle ins oferta' })
   @ApiParam({
     name: 'id',
     description: 'ID del detalle ins oferta',
@@ -198,8 +195,8 @@ export class DetalleInsOfertasController {
     return this.detalleInsOfertasService.update(id, updateDetalleInsOfertaDto);
   }
 
-  @Delete('/sync/:id')
-  @ApiOperation({ summary: 'Eliminar detalle ins oferta (sincrónico)' })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar detalle ins oferta' })
   @ApiParam({
     name: 'id',
     description: 'ID del detalle ins oferta',
@@ -223,7 +220,6 @@ export class DetalleInsOfertasController {
     return this.detalleInsOfertasService.remove(id);
   }
 
-  //METODOS ASINCRONOS
   @Post('/async')
   @ApiOperation({ summary: 'Crear nuevo detalle ins oferta (asíncrono)' })
   @ApiBody({
@@ -244,31 +240,14 @@ export class DetalleInsOfertasController {
     },
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para crear detalle ins oferta',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para crear detalle ins oferta',
-        },
-      },
-    },
+    status: 201,
+    description: 'Detalle ins oferta creado exitosamente',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   async createQueue(
     @Body() createDetalleInsOfertaDto: CreateDetalleInsOfertaDto,
   ) {
-    const result =
-      await this.detalleInsOfertaQueueService.createDetalleInsOferta(
-        createDetalleInsOfertaDto,
-      );
-    return {
-      ...result,
-      message: 'Job encolado para crear detalle ins oferta',
-    };
+    return this.detalleInsOfertasService.create(createDetalleInsOfertaDto);
   }
 
   @Get('/async')
@@ -278,32 +257,14 @@ export class DetalleInsOfertasController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener detalles ins ofertas',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener detalles ins ofertas',
-        },
-      },
-    },
+    status: 200,
+    description: 'Detalles ins ofertas obtenidos exitosamente',
   })
   async findAllQueue(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    const result =
-      await this.detalleInsOfertaQueueService.findAllDetalleInsOfertas({
-        page,
-        limit,
-      });
-    return {
-      ...result,
-      message: 'Job encolado para obtener detalles ins ofertas',
-    };
+    return this.detalleInsOfertasService.findAll();
   }
 
   @Get('/async/:id')
@@ -314,27 +275,12 @@ export class DetalleInsOfertasController {
     example: 'uuid-example',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener detalle ins oferta',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener detalle ins oferta',
-        },
-      },
-    },
+    status: 200,
+    description: 'Detalle ins oferta obtenido exitosamente',
   })
   @ApiResponse({ status: 404, description: 'Detalle ins oferta no encontrado' })
   async findOneQueue(@Param('id') id: string) {
-    const result =
-      await this.detalleInsOfertaQueueService.findOneDetalleInsOferta(id);
-    return {
-      ...result,
-      message: 'Job encolado para obtener detalle ins oferta',
-    };
+    return this.detalleInsOfertasService.findOne(id);
   }
 
   @Patch('/async/:id')
@@ -362,18 +308,8 @@ export class DetalleInsOfertasController {
     },
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para actualizar detalle ins oferta',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para actualizar detalle ins oferta',
-        },
-      },
-    },
+    status: 200,
+    description: 'Detalle ins oferta actualizado exitosamente',
   })
   @ApiResponse({ status: 404, description: 'Detalle ins oferta no encontrado' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
@@ -381,15 +317,7 @@ export class DetalleInsOfertasController {
     @Param('id') id: string,
     @Body() updateDetalleInsOfertaDto: UpdateDetalleInsOfertaDto,
   ) {
-    const result =
-      await this.detalleInsOfertaQueueService.updateDetalleInsOferta(
-        id,
-        updateDetalleInsOfertaDto,
-      );
-    return {
-      ...result,
-      message: 'Job encolado para actualizar detalle ins oferta',
-    };
+    return this.detalleInsOfertasService.update(id, updateDetalleInsOfertaDto);
   }
 
   @Delete('/async/:id')
@@ -400,26 +328,11 @@ export class DetalleInsOfertasController {
     example: 'uuid-example',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para eliminar detalle ins oferta',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para eliminar detalle ins oferta',
-        },
-      },
-    },
+    status: 200,
+    description: 'Detalle ins oferta eliminado exitosamente',
   })
   @ApiResponse({ status: 404, description: 'Detalle ins oferta no encontrado' })
   async removeQueue(@Param('id') id: string) {
-    const result =
-      await this.detalleInsOfertaQueueService.deleteDetalleInsOferta(id);
-    return {
-      ...result,
-      message: 'Job encolado para eliminar detalle ins oferta',
-    };
+    return this.detalleInsOfertasService.remove(id);
   }
 }

@@ -1,6 +1,6 @@
 import {
   Injectable,
-  NotAcceptableException,
+  ConflictException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -15,13 +15,20 @@ export class DetallesInscripcionService {
   async create(
     createDetalleInscripcionDto: CreateDetalleInscripcionDto,
   ): Promise<DetalleInscripcion> {
-    const createdDetalleInscripcion =
-      await this.prismaService.detalleInscripcion.create({
-        data: createDetalleInscripcionDto,
-      });
-    if (!createdDetalleInscripcion)
-      throw new NotAcceptableException('Error creando detalle de inscripción');
-    return createdDetalleInscripcion;
+    try {
+      const createdDetalleInscripcion =
+        await this.prismaService.detalleInscripcion.create({
+          data: createDetalleInscripcionDto,
+        });
+      return createdDetalleInscripcion;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          `Ya existe un detalle de inscripción con el mismo ${error.meta?.target?.[0] || 'campo'}`,
+        );
+      }
+      throw error;
+    }
   }
 
   async findAll(): Promise<DetalleInscripcion[]> {
@@ -44,24 +51,38 @@ export class DetallesInscripcionService {
     id: string,
     updatedDetalleInscripcionDto: UpdateDetalleInscripcionDto,
   ): Promise<DetalleInscripcion> {
-    const updatedDetalleInscripcion =
-      await this.prismaService.detalleInscripcion.update({
-        where: { id },
-        data: updatedDetalleInscripcionDto,
-      });
-    if (!updatedDetalleInscripcion)
-      throw new NotFoundException('Detalle de inscripción no encontrado');
-    return updatedDetalleInscripcion;
+    try {
+      const updatedDetalleInscripcion =
+        await this.prismaService.detalleInscripcion.update({
+          where: { id },
+          data: updatedDetalleInscripcionDto,
+        });
+      return updatedDetalleInscripcion;
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Detalle de inscripción no encontrado');
+      }
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          `Ya existe un detalle de inscripción con el mismo ${error.meta?.target?.[0] || 'campo'}`,
+        );
+      }
+      throw error;
+    }
   }
 
-  async remove(id: string): Promise<DetalleInscripcion> {
-    const deletedDetalleInscripcion =
+  async remove(id: string): Promise<{ message: string }> {
+    try {
       await this.prismaService.detalleInscripcion.update({
         where: { id },
         data: { estaActivo: false },
       });
-    if (!deletedDetalleInscripcion)
-      throw new NotFoundException('Detalle de inscripción no encontrado');
-    return deletedDetalleInscripcion;
+      return { message: 'Detalle de inscripción eliminado exitosamente' };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Detalle de inscripción no encontrado');
+      }
+      throw error;
+    }
   }
 }

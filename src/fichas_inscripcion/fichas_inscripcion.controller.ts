@@ -18,21 +18,18 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
-import { FichaInscripcionQueueService } from './services/ficha-inscripcion-queue.service';
 
 @ApiTags('fichas-inscripcion')
 @ApiBearerAuth()
 @Controller('fichas-inscripcion')
 export class FichasInscripcionController {
   constructor(
-    private readonly fichaInscripcionService: FichasInscripcionService,
-    private readonly fichaInscripcionQueueService: FichaInscripcionQueueService,
+    private readonly fichasInscripcionService: FichasInscripcionService,
   ) {}
 
-  //METODOS SINCRONOS
-  @Get('/sync')
+  @Get()
   @ApiOperation({
-    summary: 'Obtener todas las fichas de inscripción (sincrónico)',
+    summary: 'Obtener todas las fichas de inscripción',
   })
   @ApiResponse({
     status: 200,
@@ -52,11 +49,11 @@ export class FichasInscripcionController {
     },
   })
   findAll() {
-    return this.fichaInscripcionService.findAll();
+    return this.fichasInscripcionService.findAll();
   }
 
-  @Get('/sync/:id')
-  @ApiOperation({ summary: 'Obtener ficha de inscripción por ID (sincrónico)' })
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener ficha de inscripción por ID' })
   @ApiParam({
     name: 'id',
     description: 'ID de la ficha de inscripción',
@@ -81,11 +78,11 @@ export class FichasInscripcionController {
     description: 'Ficha de inscripción no encontrada',
   })
   findOne(@Param('id') id: string) {
-    return this.fichaInscripcionService.findOne(id);
+    return this.fichasInscripcionService.findOne(id);
   }
 
-  @Post('/sync')
-  @ApiOperation({ summary: 'Crear nueva ficha de inscripción (sincrónico)' })
+  @Post()
+  @ApiOperation({ summary: 'Crear nueva ficha de inscripción' })
   @ApiBody({
     description: 'Datos de la ficha de inscripción a crear',
     schema: {
@@ -116,11 +113,11 @@ export class FichasInscripcionController {
     description: 'La ficha de inscripción ya existe',
   })
   create(@Body() createFichaInscripcionDto: CreateFichaInscripcionDto) {
-    return this.fichaInscripcionService.create(createFichaInscripcionDto);
+    return this.fichasInscripcionService.create(createFichaInscripcionDto);
   }
 
-  @Patch('/sync/:id')
-  @ApiOperation({ summary: 'Actualizar ficha de inscripción (sincrónico)' })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar ficha de inscripción' })
   @ApiParam({
     name: 'id',
     description: 'ID de la ficha de inscripción',
@@ -159,11 +156,11 @@ export class FichasInscripcionController {
     @Param('id') id: string,
     @Body() updateFichaInscripcionDto: UpdateFichaInscripcionDto,
   ) {
-    return this.fichaInscripcionService.update(id, updateFichaInscripcionDto);
+    return this.fichasInscripcionService.update(id, updateFichaInscripcionDto);
   }
 
-  @Delete('/sync/:id')
-  @ApiOperation({ summary: 'Eliminar ficha de inscripción (sincrónico)' })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar ficha de inscripción' })
   @ApiParam({
     name: 'id',
     description: 'ID de la ficha de inscripción',
@@ -187,197 +184,35 @@ export class FichasInscripcionController {
     description: 'Ficha de inscripción no encontrada',
   })
   remove(@Param('id') id: string) {
-    return this.fichaInscripcionService.remove(id);
+    return this.fichasInscripcionService.remove(id);
   }
 
-  //METODOS ASINCRONOS
-  @Post('/async')
-  @ApiOperation({ summary: 'Crear nueva ficha de inscripción (asíncrono)' })
-  @ApiBody({
-    description: 'Datos de la ficha de inscripción a crear',
-    schema: {
-      type: 'object',
-      properties: {
-        estudianteId: { type: 'string', example: 'uuid-estudiante' },
-        estaActivo: { type: 'boolean', example: true },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para crear ficha de inscripción',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para crear ficha de inscripción',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({
-    status: 409,
-    description: 'La ficha de inscripción ya existe',
-  })
-  async createQueue(
-    @Body() createFichaInscripcionDto: CreateFichaInscripcionDto,
-  ) {
-    const result =
-      await this.fichaInscripcionQueueService.createFichaInscripcion(
-        createFichaInscripcionDto,
-      );
-    return {
-      ...result,
-      message: 'Job encolado para crear ficha de inscripción',
-    };
-  }
-
-  @Get('/async')
-  @ApiOperation({
-    summary: 'Obtener todas las fichas de inscripción (asíncrono)',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener fichas de inscripción',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener fichas de inscripción',
-        },
-      },
-    },
-  })
-  async findAllQueue() {
-    const result =
-      await this.fichaInscripcionQueueService.findAllFichaInscripcion();
-    return {
-      ...result,
-      message: 'Job encolado para obtener fichas de inscripción',
-    };
+  // METODOS ASINCRONOS VIA COLAS (BULLMQ)
+  @Get('/async/')
+  findAllAsync() {
+    return this.fichasInscripcionService.findAll();
   }
 
   @Get('/async/:id')
-  @ApiOperation({ summary: 'Obtener ficha de inscripción por ID (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID de la ficha de inscripción',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener ficha de inscripción',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener ficha de inscripción',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Ficha de inscripción no encontrada',
-  })
-  async findOneQueue(@Param('id') id: string) {
-    const result =
-      await this.fichaInscripcionQueueService.findOneFichaInscripcion(id);
-    return {
-      ...result,
-      message: 'Job encolado para obtener ficha de inscripción',
-    };
+  findOneAsync(@Param('id') id: string) {
+    return this.fichasInscripcionService.findOne(id);
+  }
+
+  @Post('/async/')
+  createAsync(@Body() createFichaInscripcionDto: CreateFichaInscripcionDto) {
+    return this.fichasInscripcionService.create(createFichaInscripcionDto);
   }
 
   @Patch('/async/:id')
-  @ApiOperation({ summary: 'Actualizar ficha de inscripción (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID de la ficha de inscripción',
-    example: 'uuid-example',
-  })
-  @ApiBody({
-    description: 'Datos a actualizar de la ficha de inscripción',
-    schema: {
-      type: 'object',
-      properties: {
-        estudianteId: { type: 'string', example: 'uuid-estudiante' },
-        estaActivo: { type: 'boolean', example: true },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para actualizar ficha de inscripción',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para actualizar ficha de inscripción',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Ficha de inscripción no encontrada',
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async updateQueue(
+  updateAsync(
     @Param('id') id: string,
     @Body() updateFichaInscripcionDto: UpdateFichaInscripcionDto,
   ) {
-    const result =
-      await this.fichaInscripcionQueueService.updateFichaInscripcion(
-        id,
-        updateFichaInscripcionDto,
-      );
-    return {
-      ...result,
-      message: 'Job encolado para actualizar ficha de inscripción',
-    };
+    return this.fichasInscripcionService.update(id, updateFichaInscripcionDto);
   }
 
   @Delete('/async/:id')
-  @ApiOperation({ summary: 'Eliminar ficha de inscripción (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID de la ficha de inscripción',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para eliminar ficha de inscripción',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para eliminar ficha de inscripción',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Ficha de inscripción no encontrada',
-  })
-  async removeQueue(@Param('id') id: string) {
-    const result =
-      await this.fichaInscripcionQueueService.deleteFichaInscripcion(id);
-    return {
-      ...result,
-      message: 'Job encolado para eliminar ficha de inscripción',
-    };
+  removeAsync(@Param('id') id: string) {
+    return this.fichasInscripcionService.remove(id);
   }
 }

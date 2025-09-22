@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   NotAcceptableException,
   NotFoundException,
@@ -15,13 +16,20 @@ export class AvanceAcademicoService {
   async create(
     createAvanceAcademicoDto: CreateAvanceAcademicoDto,
   ): Promise<AvanceAcademico> {
-    const createdAvanceAcademico =
-      await this.prismaService.avanceAcademico.create({
-        data: createAvanceAcademicoDto,
-      });
-    if (!createdAvanceAcademico)
+    try {
+      const createdAvanceAcademico =
+        await this.prismaService.avanceAcademico.create({
+          data: createAvanceAcademicoDto,
+        });
+      return createdAvanceAcademico;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe un avance académico con esos datos únicos',
+        );
+      }
       throw new NotAcceptableException('Error creando avance académico');
-    return createdAvanceAcademico;
+    }
   }
 
   async findAll(): Promise<AvanceAcademico[]> {
@@ -46,24 +54,38 @@ export class AvanceAcademicoService {
     id: string,
     updateAvanceAcademicoDto: UpdateAvanceAcademicoDto,
   ): Promise<AvanceAcademico> {
-    const updatedAvanceAcademico =
-      await this.prismaService.avanceAcademico.update({
-        where: { id },
-        data: updateAvanceAcademicoDto,
-      });
-    if (!updatedAvanceAcademico)
-      throw new NotFoundException('Avance académico no encontrado');
-    return updatedAvanceAcademico;
+    try {
+      const updatedAvanceAcademico =
+        await this.prismaService.avanceAcademico.update({
+          where: { id },
+          data: updateAvanceAcademicoDto,
+        });
+      return updatedAvanceAcademico;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe un avance académico con esos datos únicos',
+        );
+      }
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Avance académico no encontrado');
+      }
+      throw error;
+    }
   }
 
-  async remove(id: string): Promise<AvanceAcademico> {
-    const deletedAvanceAcademico =
+  async remove(id: string): Promise<{ message: string }> {
+    try {
       await this.prismaService.avanceAcademico.update({
         where: { id },
         data: { estaActivo: false },
       });
-    if (!deletedAvanceAcademico)
-      throw new NotFoundException('Avance académico no encontrado');
-    return deletedAvanceAcademico;
+      return { message: 'Avance académico eliminado exitosamente' };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Avance académico no encontrado');
+      }
+      throw error;
+    }
   }
 }

@@ -331,8 +331,8 @@ model Worker {
 
 model Endpoint {
   id          String   @id @default(uuid())
-  ruta        String // ej: "/api/carreras"
-  metodo      String // ej: "GET", "POST", "PUT", "DELETE"
+  ruta        String // "/api/carreras"
+  metodo      String // "GET", "POST", "PUT", "DELETE"
   descripcion String?
   colaId      String
   cola        Cola     @relation(fields: [colaId], references: [id])

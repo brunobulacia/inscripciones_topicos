@@ -8,7 +8,6 @@ import {
   Delete,
 } from '@nestjs/common';
 import { GestionesService } from './gestiones.service';
-import { GestionQueueService } from './services/gestion-queue.service';
 import type { CreateGestionDto } from './dto/create-gestion.dto';
 import type { UpdateGestionDto } from './dto/update-gestion.dto';
 import {
@@ -24,14 +23,10 @@ import {
 @ApiBearerAuth()
 @Controller('gestiones')
 export class GestionesController {
-  constructor(
-    private readonly gestionService: GestionesService,
-    private readonly gestionQueueService: GestionQueueService,
-  ) {}
+  constructor(private readonly gestionesService: GestionesService) {}
 
-  //METODOS SINCRONOS
-  @Get('/sync')
-  @ApiOperation({ summary: 'Obtener todas las gestiones (sincrónico)' })
+  @Get()
+  @ApiOperation({ summary: 'Obtener todas las gestiones' })
   @ApiResponse({
     status: 200,
     description: 'Gestiones obtenidas exitosamente',
@@ -50,11 +45,11 @@ export class GestionesController {
     },
   })
   findAll() {
-    return this.gestionService.findAll();
+    return this.gestionesService.findAll();
   }
 
-  @Get('/sync/:id')
-  @ApiOperation({ summary: 'Obtener gestión por ID (sincrónico)' })
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener gestión por ID' })
   @ApiParam({
     name: 'id',
     description: 'ID de la gestión',
@@ -74,12 +69,13 @@ export class GestionesController {
       },
     },
   })
+  @ApiResponse({ status: 404, description: 'Gestión no encontrada' })
   findOne(@Param('id') id: string) {
-    return this.gestionService.findOne(id);
+    return this.gestionesService.findOne(id);
   }
 
-  @Post('/sync')
-  @ApiOperation({ summary: 'Crear nueva gestión (sincrónico)' })
+  @Post()
+  @ApiOperation({ summary: 'Crear nueva gestión' })
   @ApiBody({
     description: 'Datos de la nueva gestión',
     schema: {
@@ -90,12 +86,27 @@ export class GestionesController {
       },
     },
   })
+  @ApiResponse({
+    status: 201,
+    description: 'Gestión creada exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'uuid-example' },
+        año: { type: 'string', example: '2024' },
+        estaActivo: { type: 'boolean', example: true },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
   create(@Body() createGestionDto: CreateGestionDto) {
-    return this.gestionService.create(createGestionDto);
+    return this.gestionesService.create(createGestionDto);
   }
 
-  @Patch('/sync/:id')
-  @ApiOperation({ summary: 'Actualizar gestión (sincrónico)' })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar gestión' })
   @ApiParam({
     name: 'id',
     description: 'ID de la gestión',
@@ -125,13 +136,14 @@ export class GestionesController {
       },
     },
   })
+  @ApiResponse({ status: 404, description: 'Gestión no encontrada' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   update(@Param('id') id: string, @Body() updateGestionDto: UpdateGestionDto) {
-    return this.gestionService.update(id, updateGestionDto);
+    return this.gestionesService.update(id, updateGestionDto);
   }
 
-  @Delete('/sync/:id')
-  @ApiOperation({ summary: 'Eliminar gestión (sincrónico)' })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar gestión' })
   @ApiParam({
     name: 'id',
     description: 'ID de la gestión',
@@ -150,171 +162,37 @@ export class GestionesController {
       },
     },
   })
+  @ApiResponse({ status: 404, description: 'Gestión no encontrada' })
   remove(@Param('id') id: string) {
-    return this.gestionService.remove(id);
+    return this.gestionesService.remove(id);
   }
 
-  //METODOS ASINCRONOS
-  @Post('/async')
-  @ApiOperation({ summary: 'Crear nueva gestión (asíncrono)' })
-  @ApiBody({
-    description: 'Datos de la gestión a crear',
-    schema: {
-      type: 'object',
-      properties: {
-        año: { type: 'string', example: '2024' },
-        estaActivo: { type: 'boolean', example: true },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado exitosamente',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: { type: 'string', example: 'Job encolado para crear gestión' },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async createQueue(@Body() createGestionDto: CreateGestionDto) {
-    const result = await this.gestionQueueService.enqueueCreateGestion({
-      año: createGestionDto.año,
-      estaActivo: createGestionDto.estaActivo,
-    });
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para crear gestión',
-    };
-  }
-
-  @Get('/async')
-  @ApiOperation({ summary: 'Obtener todas las gestiones (asíncrono)' })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener gestiones',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener gestiones',
-        },
-      },
-    },
-  })
-  async findAllQueue() {
-    const result = await this.gestionQueueService.enqueueFindAllGestiones();
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para obtener gestiones',
-    };
+  // METODOS ASINCRONOS VIA COLAS (BULLMQ)
+  @Get('/async/')
+  findAllAsync() {
+    return this.gestionesService.findAll();
   }
 
   @Get('/async/:id')
-  @ApiOperation({ summary: 'Obtener gestión por ID (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID de la gestión',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener gestión',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener gestión',
-        },
-      },
-    },
-  })
-  async findOneQueue(@Param('id') id: string) {
-    const result = await this.gestionQueueService.enqueueFindOneGestion({ id });
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para obtener gestión',
-    };
+  findOneAsync(@Param('id') id: string) {
+    return this.gestionesService.findOne(id);
+  }
+
+  @Post('/async/')
+  createAsync(@Body() createGestionDto: CreateGestionDto) {
+    return this.gestionesService.create(createGestionDto);
   }
 
   @Patch('/async/:id')
-  @ApiOperation({ summary: 'Actualizar gestión (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID de la gestión',
-    example: 'uuid-example',
-  })
-  @ApiBody({
-    description: 'Datos a actualizar de la gestión',
-    schema: {
-      type: 'object',
-      properties: {
-        año: { type: 'string', example: '2024' },
-        estaActivo: { type: 'boolean', example: true },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para actualizar gestión',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para actualizar gestión',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async updateQueue(
+  updateAsync(
     @Param('id') id: string,
     @Body() updateGestionDto: UpdateGestionDto,
   ) {
-    const result = await this.gestionQueueService.enqueueUpdateGestion({
-      id,
-      ...updateGestionDto,
-    });
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para actualizar gestión',
-    };
+    return this.gestionesService.update(id, updateGestionDto);
   }
 
   @Delete('/async/:id')
-  @ApiOperation({ summary: 'Eliminar gestión (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID de la gestión',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para eliminar gestión',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para eliminar gestión',
-        },
-      },
-    },
-  })
-  async removeQueue(@Param('id') id: string) {
-    const result = await this.gestionQueueService.enqueueDeleteGestion({ id });
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para eliminar gestión',
-    };
+  removeAsync(@Param('id') id: string) {
+    return this.gestionesService.remove(id);
   }
 }

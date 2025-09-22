@@ -18,7 +18,6 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
-import { MaestroDeOfertaQueueService } from './services/maestro-de-oferta-queue.service';
 
 @ApiTags('maestro-de-ofertas')
 @ApiBearerAuth()
@@ -26,13 +25,11 @@ import { MaestroDeOfertaQueueService } from './services/maestro-de-oferta-queue.
 export class MaestroDeOfertasController {
   constructor(
     private readonly maestroDeOfertasService: MaestroDeOfertasService,
-    private readonly maestroDeOfertaQueueService: MaestroDeOfertaQueueService,
   ) {}
 
-  //METODOS SINCRONOS
-  @Get('/sync')
+  @Get()
   @ApiOperation({
-    summary: 'Obtener todos los maestros de ofertas (sincrónico)',
+    summary: 'Obtener todos los maestros de ofertas',
   })
   @ApiResponse({
     status: 200,
@@ -56,8 +53,8 @@ export class MaestroDeOfertasController {
     return this.maestroDeOfertasService.findAll();
   }
 
-  @Get('/sync/:id')
-  @ApiOperation({ summary: 'Obtener maestro de oferta por ID (sincrónico)' })
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener maestro de oferta por ID' })
   @ApiParam({
     name: 'id',
     description: 'ID del maestro de oferta',
@@ -83,8 +80,8 @@ export class MaestroDeOfertasController {
     return this.maestroDeOfertasService.findOne(id);
   }
 
-  @Post('/sync')
-  @ApiOperation({ summary: 'Crear nuevo maestro de oferta (sincrónico)' })
+  @Post()
+  @ApiOperation({ summary: 'Crear nuevo maestro de oferta' })
   @ApiBody({
     description: 'Datos del maestro de oferta a crear',
     schema: {
@@ -115,8 +112,8 @@ export class MaestroDeOfertasController {
     return this.maestroDeOfertasService.create(createMaestroDeOfertaDto);
   }
 
-  @Patch('/sync/:id')
-  @ApiOperation({ summary: 'Actualizar maestro de oferta (sincrónico)' })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar maestro de oferta' })
   @ApiParam({
     name: 'id',
     description: 'ID del maestro de oferta',
@@ -157,8 +154,8 @@ export class MaestroDeOfertasController {
     return this.maestroDeOfertasService.update(id, updateMaestroDeOfertaDto);
   }
 
-  @Delete('/sync/:id')
-  @ApiOperation({ summary: 'Eliminar maestro de oferta (sincrónico)' })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar maestro de oferta' })
   @ApiParam({
     name: 'id',
     description: 'ID del maestro de oferta',
@@ -182,180 +179,32 @@ export class MaestroDeOfertasController {
     return this.maestroDeOfertasService.remove(id);
   }
 
-  //METODOS ASINCRONOS
-  @Post('/async')
-  @ApiOperation({ summary: 'Crear nuevo maestro de oferta (asíncrono)' })
-  @ApiBody({
-    description: 'Datos del maestro de oferta a crear',
-    schema: {
-      type: 'object',
-      properties: {
-        periodoId: { type: 'string', example: 'uuid-periodo' },
-        estudianteId: { type: 'string', example: 'uuid-estudiante' },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para crear maestro de oferta',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para crear maestro de oferta',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async createQueue(
-    @Body() createMaestroDeOfertaDto: CreateMaestroDeOfertaDto,
-  ) {
-    const result = await this.maestroDeOfertaQueueService.createMaestroDeOferta(
-      createMaestroDeOfertaDto,
-    );
-    return {
-      ...result,
-      message: 'Job encolado para crear maestro de oferta',
-    };
-  }
-
-  @Get('/async')
-  @ApiOperation({
-    summary: 'Obtener todos los maestros de ofertas (asíncrono)',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener maestros de ofertas',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener maestros de ofertas',
-        },
-      },
-    },
-  })
-  async findAllQueue() {
-    const result =
-      await this.maestroDeOfertaQueueService.findAllMaestroDeOfertas();
-    return {
-      ...result,
-      message: 'Job encolado para obtener maestros de ofertas',
-    };
+  // METODOS ASINCRONOS VIA COLAS (BULLMQ)
+  @Get('/async/')
+  findAllAsync() {
+    return this.maestroDeOfertasService.findAll();
   }
 
   @Get('/async/:id')
-  @ApiOperation({ summary: 'Obtener maestro de oferta por ID (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID del maestro de oferta',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener maestro de oferta',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener maestro de oferta',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 404, description: 'Maestro de oferta no encontrado' })
-  async findOneQueue(@Param('id') id: string) {
-    const result =
-      await this.maestroDeOfertaQueueService.findOneMaestroDeOferta(id);
-    return {
-      ...result,
-      message: 'Job encolado para obtener maestro de oferta',
-    };
+  findOneAsync(@Param('id') id: string) {
+    return this.maestroDeOfertasService.findOne(id);
+  }
+
+  @Post('/async/')
+  createAsync(@Body() createMaestroDeOfertaDto: CreateMaestroDeOfertaDto) {
+    return this.maestroDeOfertasService.create(createMaestroDeOfertaDto);
   }
 
   @Patch('/async/:id')
-  @ApiOperation({ summary: 'Actualizar maestro de oferta (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID del maestro de oferta',
-    example: 'uuid-example',
-  })
-  @ApiBody({
-    description: 'Datos a actualizar del maestro de oferta',
-    schema: {
-      type: 'object',
-      properties: {
-        periodoId: { type: 'string', example: 'uuid-periodo' },
-        estudianteId: { type: 'string', example: 'uuid-estudiante' },
-        estaActivo: { type: 'boolean', example: true },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para actualizar maestro de oferta',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para actualizar maestro de oferta',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 404, description: 'Maestro de oferta no encontrado' })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async updateQueue(
+  updateAsync(
     @Param('id') id: string,
     @Body() updateMaestroDeOfertaDto: UpdateMaestroDeOfertaDto,
   ) {
-    const result = await this.maestroDeOfertaQueueService.updateMaestroDeOferta(
-      id,
-      updateMaestroDeOfertaDto,
-    );
-    return {
-      ...result,
-      message: 'Job encolado para actualizar maestro de oferta',
-    };
+    return this.maestroDeOfertasService.update(id, updateMaestroDeOfertaDto);
   }
 
   @Delete('/async/:id')
-  @ApiOperation({ summary: 'Eliminar maestro de oferta (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID del maestro de oferta',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para eliminar maestro de oferta',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para eliminar maestro de oferta',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 404, description: 'Maestro de oferta no encontrado' })
-  async removeQueue(@Param('id') id: string) {
-    const result =
-      await this.maestroDeOfertaQueueService.deleteMaestroDeOferta(id);
-    return {
-      ...result,
-      message: 'Job encolado para eliminar maestro de oferta',
-    };
+  removeAsync(@Param('id') id: string) {
+    return this.maestroDeOfertasService.remove(id);
   }
 }

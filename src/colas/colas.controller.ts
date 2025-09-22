@@ -198,4 +198,60 @@ export class ColasController {
   async getJobStatus(@Param('jobId') jobId: string) {
     return this.colasService.getJobStatus(jobId);
   }
+
+  // Endpoints para limpieza y sincronización
+  @Post('cleanup-redis')
+  @ApiOperation({ summary: 'Limpiar Redis de colas inactivas' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Limpieza de Redis completada',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        cleaned: { type: 'array', items: { type: 'string' } },
+        kept: { type: 'array', items: { type: 'string' } }
+      }
+    }
+  })
+  async cleanupRedis() {
+    return this.colasService.cleanupRedis();
+  }
+
+  @Post('sync-database')
+  @ApiOperation({ summary: 'Sincronizar colas con base de datos' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Sincronización completada',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        synced: { type: 'array', items: { type: 'string' } },
+        errors: { type: 'array', items: { type: 'string' } }
+      }
+    }
+  })
+  async syncWithDatabase() {
+    return this.colasService.syncWithDatabase();
+  }
+
+  @Post('full-cleanup')
+  @ApiOperation({ summary: 'Limpieza completa y sincronización' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Limpieza y sincronización completa',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        cleanup: { type: 'object' },
+        sync: { type: 'object' },
+        timestamp: { type: 'string', format: 'date-time' }
+      }
+    }
+  })
+  async fullCleanupAndSync() {
+    return this.colasService.fullCleanupAndSync();
+  }
 }

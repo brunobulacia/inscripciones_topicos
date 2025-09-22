@@ -2,6 +2,7 @@ import {
   Injectable,
   NotAcceptableException,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Periodo } from '@prisma/client';
@@ -13,23 +14,48 @@ export class PeriodosService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async create(createPeriodoDto: CreatePeriodoDto): Promise<Periodo> {
-    const createdPeriodo = await this.prismaService.periodo.create({
-      data: createPeriodoDto,
-    });
-    if (!createdPeriodo)
-      throw new NotAcceptableException('Error creando periodo');
-    return createdPeriodo;
+    try {
+      const createdPeriodo = await this.prismaService.periodo.create({
+        data: createPeriodoDto,
+      });
+
+      if (!createdPeriodo) {
+        throw new NotAcceptableException('Error al crear periodo');
+      }
+
+      return createdPeriodo;
+    } catch (error: any) {
+      // Prisma unique constraint error code P2002
+      if (error?.code === 'P2002') {
+        // Determine which field caused the conflict if available
+        const target = error?.meta?.target ?? [];
+        const field =
+          Array.isArray(target) && target.length > 0
+            ? target[0]
+            : 'campo único';
+        throw new ConflictException(`Ya existe un periodo con el ${field}`);
+      }
+
+      // Re-throw other unexpected errors
+      throw error;
+    }
   }
 
   async findAll(): Promise<Periodo[]> {
-    return this.prismaService.periodo.findMany({ where: { estaActivo: true } });
+    return this.prismaService.periodo.findMany({
+      where: { estaActivo: true },
+    });
   }
 
   async findOne(id: string): Promise<Periodo> {
     const foundPeriodo = await this.prismaService.periodo.findUnique({
       where: { id, estaActivo: true },
     });
-    if (!foundPeriodo) throw new NotFoundException('Periodo no encontrado');
+
+    if (!foundPeriodo) {
+      throw new NotFoundException(`Periodo con id ${id} no encontrado`);
+    }
+
     return foundPeriodo;
   }
 
@@ -41,7 +67,11 @@ export class PeriodosService {
       where: { id },
       data: updatePeriodoDto,
     });
-    if (!updatedPeriodo) throw new NotFoundException('Periodo no encontrado');
+
+    if (!updatedPeriodo) {
+      throw new NotFoundException('Error al actualizar periodo');
+    }
+
     return updatedPeriodo;
   }
 
@@ -50,7 +80,11 @@ export class PeriodosService {
       where: { id },
       data: { estaActivo: false },
     });
-    if (!deletedPeriodo) throw new NotFoundException('Periodo no encontrado');
+
+    if (!deletedPeriodo) {
+      throw new NotFoundException('Error al borrar periodo');
+    }
+
     return deletedPeriodo;
   }
 }

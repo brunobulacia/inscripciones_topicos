@@ -1,6 +1,6 @@
 import {
   Injectable,
-  NotAcceptableException,
+  ConflictException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateDocenteDto } from './dto/create-docente.dto';
@@ -13,15 +13,20 @@ export class DocentesService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async create(createDocenteDto: CreateDocenteDto): Promise<Docente> {
-    const createdDocente = await this.prismaService.docente.create({
-      data: createDocenteDto,
-    });
+    try {
+      const createdDocente = await this.prismaService.docente.create({
+        data: createDocenteDto,
+      });
 
-    if (!createdDocente) {
-      throw new NotAcceptableException('Error creating docente');
+      return createdDocente;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          `Ya existe un docente con el mismo ${error.meta?.target?.[0] || 'campo'}`,
+        );
+      }
+      throw error;
     }
-
-    return createdDocente;
   }
 
   async findAll(): Promise<Docente[]> {
@@ -45,28 +50,39 @@ export class DocentesService {
     id: string,
     updateDocenteDto: UpdateDocenteDto,
   ): Promise<Docente> {
-    const updatedDocente = await this.prismaService.docente.update({
-      where: { id },
-      data: updateDocenteDto,
-    });
+    try {
+      const updatedDocente = await this.prismaService.docente.update({
+        where: { id },
+        data: updateDocenteDto,
+      });
 
-    if (!updatedDocente) {
-      throw new NotFoundException('Docente no encontrado');
+      return updatedDocente;
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Docente no encontrado');
+      }
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          `Ya existe un docente con el mismo ${error.meta?.target?.[0] || 'campo'}`,
+        );
+      }
+      throw error;
     }
-
-    return updatedDocente;
   }
 
-  async remove(id: string): Promise<Docente> {
-    const deletedDocente = await this.prismaService.docente.update({
-      where: { id },
-      data: { estaActivo: false },
-    });
+  async remove(id: string): Promise<{ message: string }> {
+    try {
+      await this.prismaService.docente.update({
+        where: { id },
+        data: { estaActivo: false },
+      });
 
-    if (!deletedDocente) {
-      throw new NotFoundException('Docente no encontrado');
+      return { message: 'Docente eliminado exitosamente' };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Docente no encontrado');
+      }
+      throw error;
     }
-
-    return deletedDocente;
   }
 }

@@ -8,7 +8,6 @@ import {
   Delete,
 } from '@nestjs/common';
 import { AulasService } from './aulas.service';
-import { AulaQueueService } from './services/aula-queue.service';
 import type { CreateAulaDto } from './dto/create-aula.dto';
 import type { UpdateAulaDto } from './dto/update-aula.dto';
 import {
@@ -24,14 +23,11 @@ import {
 @ApiBearerAuth()
 @Controller('aulas')
 export class AulasController {
-  constructor(
-    private readonly aulaService: AulasService,
-    private readonly aulaQueueService: AulaQueueService,
-  ) {}
+  constructor(private readonly aulaService: AulasService) {}
 
-  //METODOS SINCRONOS
-  @Get('/sync')
-  @ApiOperation({ summary: 'Obtener todas las aulas (sincrónico)' })
+  //METODOS DIRECTOS
+  @Get()
+  @ApiOperation({ summary: 'Obtener todas las aulas' })
   @ApiResponse({
     status: 200,
     description: 'Aulas obtenidas exitosamente',
@@ -56,8 +52,8 @@ export class AulasController {
     return this.aulaService.findAll();
   }
 
-  @Get('/sync/:id')
-  @ApiOperation({ summary: 'Obtener aula por ID (sincrónico)' })
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener aula por ID' })
   @ApiParam({
     name: 'id',
     description: 'ID del aula',
@@ -84,8 +80,8 @@ export class AulasController {
     return this.aulaService.findOne(id);
   }
 
-  @Post('/sync')
-  @ApiOperation({ summary: 'Crear nueva aula (sincrónico)' })
+  @Post()
+  @ApiOperation({ summary: 'Crear nueva aula' })
   @ApiBody({
     description: 'Datos de la nueva aula',
     schema: {
@@ -103,8 +99,8 @@ export class AulasController {
     return this.aulaService.create(createAulaDto);
   }
 
-  @Patch('/sync/:id')
-  @ApiOperation({ summary: 'Actualizar aula (sincrónico)' })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar aula' })
   @ApiParam({
     name: 'id',
     description: 'ID del aula',
@@ -145,8 +141,8 @@ export class AulasController {
     return this.aulaService.update(id, updateAulaDto);
   }
 
-  @Delete('/sync/:id')
-  @ApiOperation({ summary: 'Eliminar aula (sincrónico)' })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar aula' })
   @ApiParam({
     name: 'id',
     description: 'ID del aula',
@@ -186,47 +182,22 @@ export class AulasController {
     },
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado exitosamente',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: { type: 'string', example: 'Job encolado para crear aula' },
-      },
-    },
+    status: 201,
+    description: 'Aula creada exitosamente',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   async createQueue(@Body() createAulaDto: CreateAulaDto) {
-    const result = await this.aulaQueueService.addCreateAulaJob(createAulaDto);
-    return {
-      ...result,
-      message: 'Job encolado para crear aula',
-    };
+    return this.aulaService.create(createAulaDto);
   }
 
   @Get('/async')
   @ApiOperation({ summary: 'Obtener todas las aulas (asíncrono)' })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener aulas',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener aulas',
-        },
-      },
-    },
+    status: 200,
+    description: 'Aulas obtenidas exitosamente',
   })
   async findAllQueue() {
-    const result = await this.aulaQueueService.addFindAllAulasJob();
-    return {
-      ...result,
-      message: 'Job encolado para obtener aulas',
-    };
+    return this.aulaService.findAll();
   }
 
   @Get('/async/:id')
@@ -237,25 +208,11 @@ export class AulasController {
     example: 'uuid-example',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener aula',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener aula',
-        },
-      },
-    },
+    status: 200,
+    description: 'Aula obtenida exitosamente',
   })
   async findOneQueue(@Param('id') id: string) {
-    const result = await this.aulaQueueService.addFindOneAulaJob({ id });
-    return {
-      ...result,
-      message: 'Job encolado para obtener aula',
-    };
+    return this.aulaService.findOne(id);
   }
 
   @Patch('/async/:id')
@@ -279,32 +236,15 @@ export class AulasController {
     },
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para actualizar aula',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para actualizar aula',
-        },
-      },
-    },
+    status: 200,
+    description: 'Aula actualizada exitosamente',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   async updateQueue(
     @Param('id') id: string,
     @Body() updateAulaDto: UpdateAulaDto,
   ) {
-    const result = await this.aulaQueueService.addUpdateAulaJob({
-      id,
-      data: updateAulaDto,
-    });
-    return {
-      ...result,
-      message: 'Job encolado para actualizar aula',
-    };
+    return this.aulaService.update(id, updateAulaDto);
   }
 
   @Delete('/async/:id')
@@ -315,25 +255,11 @@ export class AulasController {
     example: 'uuid-example',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para eliminar aula',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para eliminar aula',
-        },
-      },
-    },
+    status: 200,
+    description: 'Aula eliminada exitosamente',
   })
   async removeQueue(@Param('id') id: string) {
-    const result = await this.aulaQueueService.addDeleteAulaJob({ id });
-    return {
-      ...result,
-      message: 'Job encolado para eliminar aula',
-    };
+    return this.aulaService.remove(id);
   }
 
   //SEEDER

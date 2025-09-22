@@ -2,6 +2,7 @@ import {
   Injectable,
   NotAcceptableException,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Modulo } from '@prisma/client';
@@ -13,32 +14,61 @@ export class ModulosService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async create(createModuloDto: CreateModuloDto): Promise<Modulo> {
-    const createdModulo = await this.prismaService.modulo.create({
-      data: createModuloDto,
-    });
-    if (!createdModulo)
-      throw new NotAcceptableException('Error creando módulo');
-    return createdModulo;
+    try {
+      const createdModulo = await this.prismaService.modulo.create({
+        data: createModuloDto,
+      });
+
+      if (!createdModulo) {
+        throw new NotAcceptableException('Error al crear módulo');
+      }
+
+      return createdModulo;
+    } catch (error: any) {
+      // Prisma unique constraint error code P2002
+      if (error?.code === 'P2002') {
+        // Determine which field caused the conflict if available
+        const target = error?.meta?.target ?? [];
+        const field =
+          Array.isArray(target) && target.length > 0
+            ? target[0]
+            : 'campo único';
+        throw new ConflictException(`Ya existe un módulo con el ${field}`);
+      }
+
+      // Re-throw other unexpected errors
+      throw error;
+    }
   }
 
   async findAll(): Promise<Modulo[]> {
-    return this.prismaService.modulo.findMany({ where: { estaActivo: true } });
+    return this.prismaService.modulo.findMany({
+      where: { estaActivo: true },
+    });
   }
 
   async findOne(id: string): Promise<Modulo> {
     const foundModulo = await this.prismaService.modulo.findUnique({
       where: { id, estaActivo: true },
     });
-    if (!foundModulo) throw new NotFoundException('Módulo no encontrado');
+
+    if (!foundModulo) {
+      throw new NotFoundException(`Módulo con id ${id} no encontrado`);
+    }
+
     return foundModulo;
   }
 
-  async update(id: string, dto: UpdateModuloDto): Promise<Modulo> {
+  async update(id: string, updateModuloDto: UpdateModuloDto): Promise<Modulo> {
     const updatedModulo = await this.prismaService.modulo.update({
       where: { id },
-      data: dto,
+      data: updateModuloDto,
     });
-    if (!updatedModulo) throw new NotFoundException('Módulo no encontrado');
+
+    if (!updatedModulo) {
+      throw new NotFoundException('Error al actualizar módulo');
+    }
+
     return updatedModulo;
   }
 
@@ -47,7 +77,11 @@ export class ModulosService {
       where: { id },
       data: { estaActivo: false },
     });
-    if (!deletedModulo) throw new NotFoundException('Módulo no encontrado');
+
+    if (!deletedModulo) {
+      throw new NotFoundException('Error al borrar módulo');
+    }
+
     return deletedModulo;
   }
 }

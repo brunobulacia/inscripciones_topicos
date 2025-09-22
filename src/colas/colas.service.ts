@@ -238,13 +238,13 @@ export class ColasService {
       const queue = new Queue(nombreCola, {
         connection: this.redisConnection,
         defaultJobOptions: {
-          removeOnComplete: 100,
-          removeOnFail: 50,
+          removeOnComplete: false,
+          removeOnFail: false,
           attempts: 3,
-          backoff: {
+          /* backoff: {
             type: 'exponential',
             delay: 2000,
-          },
+          }, */
         },
       });
 
@@ -352,6 +352,126 @@ export class ColasService {
         error: job.failedReason
       };
     } catch (error) {
+      throw error;
+    }
+  }
+
+  // Métodos para limpiar y sincronizar Redis
+  async cleanupRedis(): Promise<{ message: string, cleaned: string[], kept: string[] }> {
+    try {
+      const Redis = require('ioredis');
+      const redis = new Redis(this.redisConnection);
+      
+      // Obtener todas las colas activas de la base de datos
+      const colasActivas = await this.prisma.cola.findMany({
+        where: { estaActiva: true },
+        select: { nombre: true }
+      });
+      
+      const colasActivasNombres = new Set(colasActivas.map(cola => cola.nombre));
+      
+      // Obtener todas las claves de Redis relacionadas con BullMQ
+      const keys = await redis.keys('bull:*');
+      
+      const cleaned: string[] = [];
+      const kept: string[] = [];
+      
+      for (const key of keys) {
+        // Extraer el nombre de la cola de la clave de Redis
+        const parts = key.split(':');
+        if (parts.length >= 2) {
+          const queueName = parts[1];
+          
+          // Si la cola no está activa en la base de datos, eliminarla de Redis
+          if (!colasActivasNombres.has(queueName)) {
+            await redis.del(key);
+            cleaned.push(key);
+            this.logger.log(`🗑️ Eliminada clave de Redis: ${key}`);
+          } else {
+            kept.push(key);
+          }
+        }
+      }
+      
+      // También cerrar las colas de BullMQ que no deberían existir
+      for (const [nombre, queue] of this.dinamicQueues.entries()) {
+        if (!colasActivasNombres.has(nombre)) {
+          await queue.close();
+          this.dinamicQueues.delete(nombre);
+          this.logger.log(`🔌 Cola BullMQ "${nombre}" cerrada y eliminada del mapa`);
+        }
+      }
+      
+      await redis.quit();
+      
+      this.logger.log(`🧹 Limpieza de Redis completada. Eliminadas: ${cleaned.length}, Mantenidas: ${kept.length}`);
+      
+      return {
+        message: 'Limpieza de Redis completada exitosamente',
+        cleaned,
+        kept
+      };
+      
+    } catch (error) {
+      this.logger.error('Error durante la limpieza de Redis:', error);
+      throw new InternalServerErrorException(`Error cleaning Redis: ${error.message}`);
+    }
+  }
+
+  async syncWithDatabase(): Promise<{ message: string, synced: string[], errors: string[] }> {
+    try {
+      // Obtener todas las colas activas de la base de datos
+      const colasActivas = await this.prisma.cola.findMany({
+        where: { estaActiva: true }
+      });
+      
+      const synced: string[] = [];
+      const errors: string[] = [];
+      
+      // Recrear las colas que deberían existir pero no están en el mapa
+      for (const cola of colasActivas) {
+        try {
+          if (!this.dinamicQueues.has(cola.nombre)) {
+            await this.createBullMQQueue(cola.nombre);
+            synced.push(cola.nombre);
+            this.logger.log(`🔄 Cola "${cola.nombre}" recreada en BullMQ`);
+          }
+        } catch (error) {
+          errors.push(`Error recreando cola "${cola.nombre}": ${error.message}`);
+          this.logger.error(`Error recreando cola "${cola.nombre}":`, error);
+        }
+      }
+      
+      this.logger.log(`🔄 Sincronización completada. Sincronizadas: ${synced.length}, Errores: ${errors.length}`);
+      
+      return {
+        message: 'Sincronización con base de datos completada',
+        synced,
+        errors
+      };
+      
+    } catch (error) {
+      this.logger.error('Error durante la sincronización:', error);
+      throw new InternalServerErrorException(`Error syncing with database: ${error.message}`);
+    }
+  }
+
+  async fullCleanupAndSync(): Promise<any> {
+    try {
+      this.logger.log('🚀 Iniciando limpieza completa y sincronización...');
+      
+      const cleanupResult = await this.cleanupRedis();
+      const syncResult = await this.syncWithDatabase();
+      
+      return {
+        message: 'Limpieza completa y sincronización exitosa',
+        cleanup: cleanupResult,
+        sync: syncResult,
+        timestamp: new Date().toISOString()
+      };
+      
+    } catch (error) {
+      this.logger.error('Error durante limpieza completa:', error);
       throw error;
     }
   }

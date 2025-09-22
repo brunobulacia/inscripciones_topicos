@@ -20,7 +20,6 @@ import {
   ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
-import { OfertaGrupoMateriaQueueService } from './services/oferta-grupo-materia-queue.service';
 
 @ApiTags('oferta-grupo-materias')
 @ApiBearerAuth()
@@ -28,13 +27,11 @@ import { OfertaGrupoMateriaQueueService } from './services/oferta-grupo-materia-
 export class OfertaGrupoMateriasController {
   constructor(
     private readonly ofertaGrupoMateriasService: OfertaGrupoMateriasService,
-    private readonly ofertaGrupoMateriaQueueService: OfertaGrupoMateriaQueueService,
   ) {}
 
-  //METODOS SINCRONOS
-  @Get('/sync')
+  @Get()
   @ApiOperation({
-    summary: 'Obtener todas las ofertas grupo materias (sincrónico)',
+    summary: 'Obtener todas las ofertas grupo materias',
   })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -59,8 +56,8 @@ export class OfertaGrupoMateriasController {
     return this.ofertaGrupoMateriasService.findAll();
   }
 
-  @Get('/sync/:id')
-  @ApiOperation({ summary: 'Obtener oferta grupo materia por ID (sincrónico)' })
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener oferta grupo materia por ID' })
   @ApiParam({
     name: 'id',
     description: 'ID de la oferta grupo materia',
@@ -88,8 +85,8 @@ export class OfertaGrupoMateriasController {
     return this.ofertaGrupoMateriasService.findOne(id);
   }
 
-  @Post('/sync')
-  @ApiOperation({ summary: 'Crear nueva oferta grupo materia (sincrónico)' })
+  @Post()
+  @ApiOperation({ summary: 'Crear nueva oferta grupo materia' })
   @ApiBody({
     description: 'Datos de la oferta grupo materia a crear',
     schema: {
@@ -119,8 +116,8 @@ export class OfertaGrupoMateriasController {
     return this.ofertaGrupoMateriasService.create(createOfertaGrupoMateriaDto);
   }
 
-  @Patch('/sync/:id')
-  @ApiOperation({ summary: 'Actualizar oferta grupo materia (sincrónico)' })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar oferta grupo materia' })
   @ApiParam({
     name: 'id',
     description: 'ID de la oferta grupo materia',
@@ -165,8 +162,8 @@ export class OfertaGrupoMateriasController {
     );
   }
 
-  @Delete('/sync/:id')
-  @ApiOperation({ summary: 'Eliminar oferta grupo materia (sincrónico)' })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar oferta grupo materia' })
   @ApiParam({
     name: 'id',
     description: 'ID de la oferta grupo materia',
@@ -193,198 +190,37 @@ export class OfertaGrupoMateriasController {
     return this.ofertaGrupoMateriasService.remove(id);
   }
 
-  //METODOS ASINCRONOS
-  @Post('/async')
-  @ApiOperation({ summary: 'Crear nueva oferta grupo materia (asíncrono)' })
-  @ApiBody({
-    description: 'Datos de la oferta grupo materia a crear',
-    schema: {
-      type: 'object',
-      properties: {
-        grupoMateriaId: { type: 'string', example: 'uuid-grupo-materia' },
-        maestroDeOfertaId: { type: 'string', example: 'uuid-maestro-oferta' },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para crear oferta grupo materia',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para crear oferta grupo materia',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async createQueue(
-    @Body() createOfertaGrupoMateriaDto: CreateOfertaGrupoMateriaDto,
-  ) {
-    const result =
-      await this.ofertaGrupoMateriaQueueService.createOfertaGrupoMateria(
-        createOfertaGrupoMateriaDto,
-      );
-    return {
-      ...result,
-      message: 'Job encolado para crear oferta grupo materia',
-    };
-  }
-
-  @Get('/async')
-  @ApiOperation({
-    summary: 'Obtener todas las ofertas grupo materias (asíncrono)',
-  })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener ofertas grupo materias',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener ofertas grupo materias',
-        },
-      },
-    },
-  })
-  async findAllQueue(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
-    const result =
-      await this.ofertaGrupoMateriaQueueService.findAllOfertaGrupoMaterias({
-        page,
-        limit,
-      });
-    return {
-      ...result,
-      message: 'Job encolado para obtener ofertas grupo materias',
-    };
+  // METODOS ASINCRONOS VIA COLAS (BULLMQ)
+  @Get('/async/')
+  findAllAsync(@Query('page') page?: number, @Query('limit') limit?: number) {
+    return this.ofertaGrupoMateriasService.findAll();
   }
 
   @Get('/async/:id')
-  @ApiOperation({ summary: 'Obtener oferta grupo materia por ID (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID de la oferta grupo materia',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener oferta grupo materia',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener oferta grupo materia',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Oferta grupo materia no encontrada',
-  })
-  async findOneQueue(@Param('id') id: string) {
-    const result =
-      await this.ofertaGrupoMateriaQueueService.findOneOfertaGrupoMateria(id);
-    return {
-      ...result,
-      message: 'Job encolado para obtener oferta grupo materia',
-    };
+  findOneAsync(@Param('id') id: string) {
+    return this.ofertaGrupoMateriasService.findOne(id);
+  }
+
+  @Post('/async/')
+  createAsync(
+    @Body() createOfertaGrupoMateriaDto: CreateOfertaGrupoMateriaDto,
+  ) {
+    return this.ofertaGrupoMateriasService.create(createOfertaGrupoMateriaDto);
   }
 
   @Patch('/async/:id')
-  @ApiOperation({ summary: 'Actualizar oferta grupo materia (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID de la oferta grupo materia',
-    example: 'uuid-example',
-  })
-  @ApiBody({
-    description: 'Datos a actualizar de la oferta grupo materia',
-    schema: {
-      type: 'object',
-      properties: {
-        grupoMateriaId: { type: 'string', example: 'uuid-grupo-materia' },
-        maestroDeOfertaId: { type: 'string', example: 'uuid-maestro-oferta' },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para actualizar oferta grupo materia',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para actualizar oferta grupo materia',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Oferta grupo materia no encontrada',
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async updateQueue(
+  updateAsync(
     @Param('id') id: string,
     @Body() updateOfertaGrupoMateriaDto: UpdateOfertaGrupoMateriaDto,
   ) {
-    const result =
-      await this.ofertaGrupoMateriaQueueService.updateOfertaGrupoMateria(
-        id,
-        updateOfertaGrupoMateriaDto,
-      );
-    return {
-      ...result,
-      message: 'Job encolado para actualizar oferta grupo materia',
-    };
+    return this.ofertaGrupoMateriasService.update(
+      id,
+      updateOfertaGrupoMateriaDto,
+    );
   }
 
   @Delete('/async/:id')
-  @ApiOperation({ summary: 'Eliminar oferta grupo materia (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID de la oferta grupo materia',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para eliminar oferta grupo materia',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para eliminar oferta grupo materia',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Oferta grupo materia no encontrada',
-  })
-  async removeQueue(@Param('id') id: string) {
-    const result =
-      await this.ofertaGrupoMateriaQueueService.deleteOfertaGrupoMateria(id);
-    return {
-      ...result,
-      message: 'Job encolado para eliminar oferta grupo materia',
-    };
+  removeAsync(@Param('id') id: string) {
+    return this.ofertaGrupoMateriasService.remove(id);
   }
 }

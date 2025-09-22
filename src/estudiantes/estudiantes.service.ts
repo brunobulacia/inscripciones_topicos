@@ -1,6 +1,6 @@
 import {
   Injectable,
-  NotAcceptableException,
+  ConflictException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateEstudianteDto } from './dto/create-estudiante.dto';
@@ -14,15 +14,18 @@ export class EstudiantesService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async create(createEstudianteDto: CreateEstudianteDto): Promise<Estudiante> {
-    const createdEstudiante = await this.prismaService.estudiante.create({
-      data: createEstudianteDto,
-    });
+    try {
+      const createdEstudiante = await this.prismaService.estudiante.create({
+        data: createEstudianteDto,
+      });
 
-    if (!createdEstudiante) {
-      throw new NotAcceptableException('Error creando estudiante');
+      return createdEstudiante;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException('Ya existe un estudiante con estos datos');
+      }
+      throw error;
     }
-
-    return createdEstudiante;
   }
 
   async findAll(paginationDto: PaginationDto): Promise<Estudiante[]> {
@@ -42,6 +45,7 @@ export class EstudiantesService {
     if (!foundEstudiante) {
       throw new NotFoundException('Estudiante no encontrado');
     }
+
     return foundEstudiante;
   }
 
@@ -49,28 +53,37 @@ export class EstudiantesService {
     id: string,
     updateEstudianteDto: UpdateEstudianteDto,
   ): Promise<Estudiante> {
-    const updatedEstudiante = await this.prismaService.estudiante.update({
-      where: { id },
-      data: updateEstudianteDto,
-    });
+    try {
+      const updatedEstudiante = await this.prismaService.estudiante.update({
+        where: { id },
+        data: updateEstudianteDto,
+      });
 
-    if (!updatedEstudiante) {
-      throw new NotFoundException('Estudiante no encontrado');
+      return updatedEstudiante;
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Estudiante no encontrado');
+      }
+      if (error.code === 'P2002') {
+        throw new ConflictException('Ya existe un estudiante con estos datos');
+      }
+      throw error;
     }
-
-    return updatedEstudiante;
   }
 
-  async remove(id: string): Promise<Estudiante> {
-    const deletedEstudiante = await this.prismaService.estudiante.update({
-      where: { id },
-      data: { estaActivo: false },
-    });
+  async remove(id: string): Promise<{ message: string }> {
+    try {
+      await this.prismaService.estudiante.update({
+        where: { id },
+        data: { estaActivo: false },
+      });
 
-    if (!deletedEstudiante) {
-      throw new NotFoundException('Estudiante no encontrado');
+      return { message: 'Estudiante eliminado exitosamente' };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Estudiante no encontrado');
+      }
+      throw error;
     }
-
-    return deletedEstudiante;
   }
 }

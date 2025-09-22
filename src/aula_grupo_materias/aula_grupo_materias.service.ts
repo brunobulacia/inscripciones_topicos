@@ -2,6 +2,7 @@ import {
   Injectable,
   NotAcceptableException,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AulaGrupoMateria } from '@prisma/client';
@@ -15,13 +16,22 @@ export class AulaGrupoMateriasService {
   async create(
     createAulaGrupoMateriaDto: CreateAulaGrupoMateriaDto,
   ): Promise<AulaGrupoMateria> {
-    const createdAulaGrupoMateria =
-      await this.prismaService.aulaGrupoMateria.create({
-        data: createAulaGrupoMateriaDto,
-      });
-    if (!createdAulaGrupoMateria)
-      throw new NotAcceptableException('Error creando aula-grupo-materia');
-    return createdAulaGrupoMateria;
+    try {
+      const createdAulaGrupoMateria =
+        await this.prismaService.aulaGrupoMateria.create({
+          data: createAulaGrupoMateriaDto,
+        });
+      if (!createdAulaGrupoMateria)
+        throw new NotAcceptableException('Error creando aula-grupo-materia');
+      return createdAulaGrupoMateria;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe una relación aula-grupo-materia con estos datos',
+        );
+      }
+      throw error;
+    }
   }
 
   async findAll(): Promise<AulaGrupoMateria[]> {
@@ -54,24 +64,43 @@ export class AulaGrupoMateriasService {
     id: string,
     updateAulaGrupoMateriaDto: UpdateAulaGrupoMateriaDto,
   ): Promise<AulaGrupoMateria> {
-    const updatedAulaGrupoMateria =
-      await this.prismaService.aulaGrupoMateria.update({
-        where: { id },
-        data: updateAulaGrupoMateriaDto,
-      });
-    if (!updatedAulaGrupoMateria)
-      throw new NotFoundException('Aula grupo materia no encontrada');
-    return updatedAulaGrupoMateria;
+    try {
+      const updatedAulaGrupoMateria =
+        await this.prismaService.aulaGrupoMateria.update({
+          where: { id },
+          data: updateAulaGrupoMateriaDto,
+        });
+      if (!updatedAulaGrupoMateria)
+        throw new NotFoundException('Aula grupo materia no encontrada');
+      return updatedAulaGrupoMateria;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe una relación aula-grupo-materia con estos datos',
+        );
+      }
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Aula grupo materia no encontrada');
+      }
+      throw error;
+    }
   }
 
-  async remove(id: string): Promise<AulaGrupoMateria> {
-    const deletedAulaGrupoMateria =
-      await this.prismaService.aulaGrupoMateria.update({
-        where: { id },
-        data: { estaActivo: false },
-      });
-    if (!deletedAulaGrupoMateria)
-      throw new NotFoundException('Aula grupo materia no encontrada');
-    return deletedAulaGrupoMateria;
+  async remove(id: string): Promise<{ message: string }> {
+    try {
+      const deletedAulaGrupoMateria =
+        await this.prismaService.aulaGrupoMateria.update({
+          where: { id },
+          data: { estaActivo: false },
+        });
+      if (!deletedAulaGrupoMateria)
+        throw new NotFoundException('Aula grupo materia no encontrada');
+      return { message: 'Relación aula-grupo-materia eliminada exitosamente' };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Aula grupo materia no encontrada');
+      }
+      throw error;
+    }
   }
 }

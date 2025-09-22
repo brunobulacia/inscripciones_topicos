@@ -8,7 +8,6 @@ import {
   Delete,
 } from '@nestjs/common';
 import { BoletaGrupoMateriasService } from './boleta_grupo_materias.service';
-import { BoletaGrupoMateriaQueueService } from './services/boleta-grupo-materia-queue.service';
 import type { CreateBoletaGrupoMateriaDto } from './dto/create-boleta_grupo_materia.dto';
 import type { UpdateBoletaGrupoMateriaDto } from './dto/update-boleta_grupo_materia.dto';
 import {
@@ -26,13 +25,11 @@ import {
 export class BoletaGrupoMateriasController {
   constructor(
     private readonly boletaGrupoMateriasService: BoletaGrupoMateriasService,
-    private readonly boletaGrupoMateriaQueueService: BoletaGrupoMateriaQueueService,
   ) {}
 
-  //METODOS SINCRONOS
-  @Get('/sync')
+  @Get()
   @ApiOperation({
-    summary: 'Obtener todas las boletas grupo materias (sincrónico)',
+    summary: 'Obtener todas las boletas grupo materias',
   })
   @ApiResponse({
     status: 200,
@@ -56,8 +53,8 @@ export class BoletaGrupoMateriasController {
     return this.boletaGrupoMateriasService.findAll();
   }
 
-  @Get('/sync/:id')
-  @ApiOperation({ summary: 'Obtener boleta grupo materia por ID (sincrónico)' })
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener boleta grupo materia por ID' })
   @ApiParam({
     name: 'id',
     description: 'ID de la boleta grupo materia',
@@ -86,8 +83,8 @@ export class BoletaGrupoMateriasController {
     return this.boletaGrupoMateriasService.findOne(id);
   }
 
-  @Post('/sync')
-  @ApiOperation({ summary: 'Crear nueva boleta grupo materia (sincrónico)' })
+  @Post()
+  @ApiOperation({ summary: 'Crear nueva boleta grupo materia' })
   @ApiBody({
     description: 'Datos de la boleta grupo materia a crear',
     schema: {
@@ -119,8 +116,8 @@ export class BoletaGrupoMateriasController {
     return this.boletaGrupoMateriasService.create(createBoletaGrupoMateriaDto);
   }
 
-  @Patch('/sync/:id')
-  @ApiOperation({ summary: 'Actualizar boleta grupo materia (sincrónico)' })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar boleta grupo materia' })
   @ApiParam({
     name: 'id',
     description: 'ID de la boleta grupo materia',
@@ -167,8 +164,8 @@ export class BoletaGrupoMateriasController {
     );
   }
 
-  @Delete('/sync/:id')
-  @ApiOperation({ summary: 'Eliminar boleta grupo materia (sincrónico)' })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar boleta grupo materia' })
   @ApiParam({
     name: 'id',
     description: 'ID de la boleta grupo materia',
@@ -195,7 +192,6 @@ export class BoletaGrupoMateriasController {
     return this.boletaGrupoMateriasService.remove(id);
   }
 
-  //METODOS ASINCRONOS
   @Post('/async')
   @ApiOperation({ summary: 'Crear nueva boleta grupo materia (asíncrono)' })
   @ApiBody({
@@ -210,31 +206,14 @@ export class BoletaGrupoMateriasController {
     },
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para crear boleta grupo materia',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para crear boleta grupo materia',
-        },
-      },
-    },
+    status: 201,
+    description: 'Boleta grupo materia creada exitosamente',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   async createQueue(
     @Body() createBoletaGrupoMateriaDto: CreateBoletaGrupoMateriaDto,
   ) {
-    const result =
-      await this.boletaGrupoMateriaQueueService.createBoletaGrupoMateria(
-        createBoletaGrupoMateriaDto,
-      );
-    return {
-      ...result,
-      message: 'Job encolado para crear boleta grupo materia',
-    };
+    return this.boletaGrupoMateriasService.create(createBoletaGrupoMateriaDto);
   }
 
   @Get('/async')
@@ -242,26 +221,11 @@ export class BoletaGrupoMateriasController {
     summary: 'Obtener todas las boletas grupo materias (asíncrono)',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener boletas grupo materias',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener boletas grupo materias',
-        },
-      },
-    },
+    status: 200,
+    description: 'Boletas grupo materias obtenidas exitosamente',
   })
   async findAllQueue() {
-    const result =
-      await this.boletaGrupoMateriaQueueService.findAllBoletaGrupoMaterias();
-    return {
-      ...result,
-      message: 'Job encolado para obtener boletas grupo materias',
-    };
+    return this.boletaGrupoMateriasService.findAll();
   }
 
   @Get('/async/:id')
@@ -272,30 +236,15 @@ export class BoletaGrupoMateriasController {
     example: 'uuid-example',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener boleta grupo materia',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener boleta grupo materia',
-        },
-      },
-    },
+    status: 200,
+    description: 'Boleta grupo materia obtenida exitosamente',
   })
   @ApiResponse({
     status: 404,
     description: 'Boleta grupo materia no encontrada',
   })
   async findOneQueue(@Param('id') id: string) {
-    const result =
-      await this.boletaGrupoMateriaQueueService.findOneBoletaGrupoMateria(id);
-    return {
-      ...result,
-      message: 'Job encolado para obtener boleta grupo materia',
-    };
+    return this.boletaGrupoMateriasService.findOne(id);
   }
 
   @Patch('/async/:id')
@@ -317,18 +266,8 @@ export class BoletaGrupoMateriasController {
     },
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para actualizar boleta grupo materia',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para actualizar boleta grupo materia',
-        },
-      },
-    },
+    status: 200,
+    description: 'Boleta grupo materia actualizada exitosamente',
   })
   @ApiResponse({
     status: 404,
@@ -339,15 +278,10 @@ export class BoletaGrupoMateriasController {
     @Param('id') id: string,
     @Body() updateBoletaGrupoMateriaDto: UpdateBoletaGrupoMateriaDto,
   ) {
-    const result =
-      await this.boletaGrupoMateriaQueueService.updateBoletaGrupoMateria(
-        id,
-        updateBoletaGrupoMateriaDto,
-      );
-    return {
-      ...result,
-      message: 'Job encolado para actualizar boleta grupo materia',
-    };
+    return this.boletaGrupoMateriasService.update(
+      id,
+      updateBoletaGrupoMateriaDto,
+    );
   }
 
   @Delete('/async/:id')
@@ -358,29 +292,14 @@ export class BoletaGrupoMateriasController {
     example: 'uuid-example',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para eliminar boleta grupo materia',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para eliminar boleta grupo materia',
-        },
-      },
-    },
+    status: 200,
+    description: 'Boleta grupo materia eliminada exitosamente',
   })
   @ApiResponse({
     status: 404,
     description: 'Boleta grupo materia no encontrada',
   })
   async removeQueue(@Param('id') id: string) {
-    const result =
-      await this.boletaGrupoMateriaQueueService.deleteBoletaGrupoMateria(id);
-    return {
-      ...result,
-      message: 'Job encolado para eliminar boleta grupo materia',
-    };
+    return this.boletaGrupoMateriasService.remove(id);
   }
 }

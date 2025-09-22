@@ -18,7 +18,6 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
-import { AvanceAcademicoQueueService } from './services/avance-academico-queue.service';
 
 @ApiTags('avance-academico')
 @ApiBearerAuth()
@@ -26,13 +25,11 @@ import { AvanceAcademicoQueueService } from './services/avance-academico-queue.s
 export class AvanceAcademicoController {
   constructor(
     private readonly avanceAcademicoService: AvanceAcademicoService,
-    private readonly avanceAcademicoQueueService: AvanceAcademicoQueueService,
   ) {}
 
-  //METODOS SINCRONOS
-  @Get('/sync')
+  @Get()
   @ApiOperation({
-    summary: 'Obtener todos los avances académicos (sincrónico)',
+    summary: 'Obtener todos los avances académicos',
   })
   @ApiResponse({
     status: 200,
@@ -59,8 +56,8 @@ export class AvanceAcademicoController {
     return this.avanceAcademicoService.findAll();
   }
 
-  @Get('/sync/:id')
-  @ApiOperation({ summary: 'Obtener avance académico por ID (sincrónico)' })
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener avance académico por ID' })
   @ApiParam({
     name: 'id',
     description: 'ID del avance académico',
@@ -89,8 +86,8 @@ export class AvanceAcademicoController {
     return this.avanceAcademicoService.findOne(id);
   }
 
-  @Post('/sync')
-  @ApiOperation({ summary: 'Crear nuevo avance académico (sincrónico)' })
+  @Post()
+  @ApiOperation({ summary: 'Crear nuevo avance académico' })
   @ApiBody({
     description: 'Datos del avance académico a crear',
     schema: {
@@ -128,8 +125,8 @@ export class AvanceAcademicoController {
     return this.avanceAcademicoService.create(createAvanceAcademicoDto);
   }
 
-  @Patch('/sync/:id')
-  @ApiOperation({ summary: 'Actualizar avance académico (sincrónico)' })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar avance académico' })
   @ApiParam({
     name: 'id',
     description: 'ID del avance académico',
@@ -176,8 +173,8 @@ export class AvanceAcademicoController {
     return this.avanceAcademicoService.update(id, updateAvanceAcademicoDto);
   }
 
-  @Delete('/sync/:id')
-  @ApiOperation({ summary: 'Eliminar avance académico (sincrónico)' })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar avance académico' })
   @ApiParam({
     name: 'id',
     description: 'ID del avance académico',
@@ -201,7 +198,6 @@ export class AvanceAcademicoController {
     return this.avanceAcademicoService.remove(id);
   }
 
-  //METODOS ASINCRONOS
   @Post('/async')
   @ApiOperation({ summary: 'Crear nuevo avance académico (asíncrono)' })
   @ApiBody({
@@ -219,55 +215,24 @@ export class AvanceAcademicoController {
     },
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para crear avance académico',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para crear avance académico',
-        },
-      },
-    },
+    status: 201,
+    description: 'Avance académico creado exitosamente',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   async createQueue(
     @Body() createAvanceAcademicoDto: CreateAvanceAcademicoDto,
   ) {
-    const result = await this.avanceAcademicoQueueService.createAvanceAcademico(
-      createAvanceAcademicoDto,
-    );
-    return {
-      ...result,
-      message: 'Job encolado para crear avance académico',
-    };
+    return this.avanceAcademicoService.create(createAvanceAcademicoDto);
   }
 
   @Get('/async')
   @ApiOperation({ summary: 'Obtener todos los avances académicos (asíncrono)' })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener avances académicos',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener avances académicos',
-        },
-      },
-    },
+    status: 200,
+    description: 'Avances académicos obtenidos exitosamente',
   })
   async findAllQueue() {
-    const result =
-      await this.avanceAcademicoQueueService.findAllAvanceAcademico();
-    return {
-      ...result,
-      message: 'Job encolado para obtener avances académicos',
-    };
+    return this.avanceAcademicoService.findAll();
   }
 
   @Get('/async/:id')
@@ -278,27 +243,12 @@ export class AvanceAcademicoController {
     example: 'uuid-example',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener avance académico',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener avance académico',
-        },
-      },
-    },
+    status: 200,
+    description: 'Avance académico obtenido exitosamente',
   })
   @ApiResponse({ status: 404, description: 'Avance académico no encontrado' })
   async findOneQueue(@Param('id') id: string) {
-    const result =
-      await this.avanceAcademicoQueueService.findOneAvanceAcademico(id);
-    return {
-      ...result,
-      message: 'Job encolado para obtener avance académico',
-    };
+    return this.avanceAcademicoService.findOne(id);
   }
 
   @Patch('/async/:id')
@@ -323,18 +273,8 @@ export class AvanceAcademicoController {
     },
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para actualizar avance académico',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para actualizar avance académico',
-        },
-      },
-    },
+    status: 200,
+    description: 'Avance académico actualizado exitosamente',
   })
   @ApiResponse({ status: 404, description: 'Avance académico no encontrado' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
@@ -342,14 +282,7 @@ export class AvanceAcademicoController {
     @Param('id') id: string,
     @Body() updateAvanceAcademicoDto: UpdateAvanceAcademicoDto,
   ) {
-    const result = await this.avanceAcademicoQueueService.updateAvanceAcademico(
-      id,
-      updateAvanceAcademicoDto,
-    );
-    return {
-      ...result,
-      message: 'Job encolado para actualizar avance académico',
-    };
+    return this.avanceAcademicoService.update(id, updateAvanceAcademicoDto);
   }
 
   @Delete('/async/:id')
@@ -360,26 +293,11 @@ export class AvanceAcademicoController {
     example: 'uuid-example',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para eliminar avance académico',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para eliminar avance académico',
-        },
-      },
-    },
+    status: 200,
+    description: 'Avance académico eliminado exitosamente',
   })
   @ApiResponse({ status: 404, description: 'Avance académico no encontrado' })
   async removeQueue(@Param('id') id: string) {
-    const result =
-      await this.avanceAcademicoQueueService.deleteAvanceAcademico(id);
-    return {
-      ...result,
-      message: 'Job encolado para eliminar avance académico',
-    };
+    return this.avanceAcademicoService.remove(id);
   }
 }

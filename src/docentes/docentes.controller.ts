@@ -8,7 +8,6 @@ import {
   Delete,
 } from '@nestjs/common';
 import { DocentesService } from './docentes.service';
-import { DocenteQueueService } from './services/docente-queue.service';
 import type { CreateDocenteDto } from './dto/create-docente.dto';
 import type { UpdateDocenteDto } from './dto/update-docente.dto';
 import {
@@ -24,14 +23,10 @@ import {
 @ApiBearerAuth()
 @Controller('docentes')
 export class DocentesController {
-  constructor(
-    private readonly docentesService: DocentesService,
-    private readonly docenteQueueService: DocenteQueueService,
-  ) {}
+  constructor(private readonly docentesService: DocentesService) {}
 
-  //METODOS SINCRONOS
-  @Get('/sync')
-  @ApiOperation({ summary: 'Obtener todos los docentes (sincrónico)' })
+  @Get()
+  @ApiOperation({ summary: 'Obtener todos los docentes' })
   @ApiResponse({
     status: 200,
     description: 'Docentes obtenidos exitosamente',
@@ -59,8 +54,8 @@ export class DocentesController {
     return this.docentesService.findAll();
   }
 
-  @Get('/sync/:id')
-  @ApiOperation({ summary: 'Obtener docente por ID (sincrónico)' })
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener docente por ID' })
   @ApiParam({
     name: 'id',
     description: 'ID del docente',
@@ -90,8 +85,8 @@ export class DocentesController {
     return this.docentesService.findOne(id);
   }
 
-  @Post('/sync')
-  @ApiOperation({ summary: 'Crear nuevo docente (sincrónico)' })
+  @Post()
+  @ApiOperation({ summary: 'Crear nuevo docente' })
   @ApiBody({
     description: 'Datos del nuevo docente',
     schema: {
@@ -113,8 +108,8 @@ export class DocentesController {
     return this.docentesService.create(createDocenteDto);
   }
 
-  @Patch('/sync/:id')
-  @ApiOperation({ summary: 'Actualizar docente (sincrónico)' })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar docente' })
   @ApiParam({
     name: 'id',
     description: 'ID del docente',
@@ -162,8 +157,8 @@ export class DocentesController {
     return this.docentesService.update(id, updateDocenteDto);
   }
 
-  @Delete('/sync/:id')
-  @ApiOperation({ summary: 'Eliminar docente (sincrónico)' })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar docente' })
   @ApiParam({
     name: 'id',
     description: 'ID del docente',
@@ -207,48 +202,22 @@ export class DocentesController {
     },
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado exitosamente',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: { type: 'string', example: 'Job encolado para crear docente' },
-      },
-    },
+    status: 201,
+    description: 'Docente creado exitosamente',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   async createQueue(@Body() createDocenteDto: CreateDocenteDto) {
-    const result =
-      await this.docenteQueueService.addCreateDocenteJob(createDocenteDto);
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para crear docente',
-    };
+    return this.docentesService.create(createDocenteDto);
   }
 
   @Get('/async')
   @ApiOperation({ summary: 'Obtener todos los docentes (asíncrono)' })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener docentes',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener docentes',
-        },
-      },
-    },
+    status: 200,
+    description: 'Docentes obtenidos exitosamente',
   })
   async findAllQueue() {
-    const result = await this.docenteQueueService.addFindAllDocentesJob();
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para obtener docentes',
-    };
+    return this.docentesService.findAll();
   }
 
   @Get('/async/:id')
@@ -259,25 +228,11 @@ export class DocentesController {
     example: 'uuid-example',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener docente',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener docente',
-        },
-      },
-    },
+    status: 200,
+    description: 'Docente obtenido exitosamente',
   })
   async findOneQueue(@Param('id') id: string) {
-    const result = await this.docenteQueueService.addFindOneDocenteJob({ id });
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para obtener docente',
-    };
+    return this.docentesService.findOne(id);
   }
 
   @Patch('/async/:id')
@@ -305,32 +260,15 @@ export class DocentesController {
     },
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para actualizar docente',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para actualizar docente',
-        },
-      },
-    },
+    status: 200,
+    description: 'Docente actualizado exitosamente',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   async updateQueue(
     @Param('id') id: string,
     @Body() updateDocenteDto: UpdateDocenteDto,
   ) {
-    const result = await this.docenteQueueService.addUpdateDocenteJob({
-      id,
-      data: updateDocenteDto,
-    });
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para actualizar docente',
-    };
+    return this.docentesService.update(id, updateDocenteDto);
   }
 
   @Delete('/async/:id')
@@ -341,24 +279,10 @@ export class DocentesController {
     example: 'uuid-example',
   })
   @ApiResponse({
-    status: 202,
-    description: 'Job encolado para eliminar docente',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para eliminar docente',
-        },
-      },
-    },
+    status: 200,
+    description: 'Docente eliminado exitosamente',
   })
   async removeQueue(@Param('id') id: string) {
-    const result = await this.docenteQueueService.addDeleteDocenteJob({ id });
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para eliminar docente',
-    };
+    return this.docentesService.remove(id);
   }
 }

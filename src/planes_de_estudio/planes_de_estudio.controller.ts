@@ -8,7 +8,6 @@ import {
   Delete,
 } from '@nestjs/common';
 import { PlanesDeEstudioService } from './planes_de_estudio.service';
-import { PlanDeEstudioQueueService } from './services/plan-de-estudio-queue.service';
 import type { CreatePlanDeEstudioDto } from './dto/create-planes_de_estudio.dto';
 import type { UpdatePlanDeEstudioDto } from './dto/update-planes_de_estudio.dto';
 import {
@@ -26,11 +25,10 @@ import {
 export class PlanesDeEstudioController {
   constructor(
     private readonly planesDeEstudioService: PlanesDeEstudioService,
-    private readonly planDeEstudioQueueService: PlanDeEstudioQueueService,
   ) {}
 
   //METODOS SINCRONOS
-  @Get('/sync')
+  @Get('')
   @ApiOperation({ summary: 'Obtener todos los planes de estudio (sincrónico)' })
   @ApiResponse({
     status: 200,
@@ -54,7 +52,7 @@ export class PlanesDeEstudioController {
     return this.planesDeEstudioService.findAll();
   }
 
-  @Get('/sync/:id')
+  @Get(':id')
   @ApiOperation({ summary: 'Obtener plan de estudio por ID (sincrónico)' })
   @ApiParam({
     name: 'id',
@@ -80,7 +78,7 @@ export class PlanesDeEstudioController {
     return this.planesDeEstudioService.findOne(id);
   }
 
-  @Post('/sync')
+  @Post('')
   @ApiOperation({ summary: 'Crear nuevo plan de estudio (sincrónico)' })
   @ApiBody({
     description: 'Datos del nuevo plan de estudio',
@@ -97,7 +95,7 @@ export class PlanesDeEstudioController {
     return this.planesDeEstudioService.create(createPlanDeEstudioDto);
   }
 
-  @Patch('/sync/:id')
+  @Patch(':id')
   @ApiOperation({ summary: 'Actualizar plan de estudio (sincrónico)' })
   @ApiParam({
     name: 'id',
@@ -138,7 +136,7 @@ export class PlanesDeEstudioController {
     return this.planesDeEstudioService.update(id, updatePlanDeEstudioDto);
   }
 
-  @Delete('/sync/:id')
+  @Delete(':id')
   @ApiOperation({ summary: 'Eliminar plan de estudio (sincrónico)' })
   @ApiParam({
     name: 'id',
@@ -163,175 +161,31 @@ export class PlanesDeEstudioController {
   }
 
   //METODOS ASINCRONOS
-  @Post('/async')
-  @ApiOperation({ summary: 'Crear nuevo plan de estudio (asíncrono)' })
-  @ApiBody({
-    description: 'Datos del plan de estudio a crear',
-    schema: {
-      type: 'object',
-      properties: {
-        version: { type: 'number', example: 1 },
-        carreraId: { type: 'string', example: 'uuid-carrera' },
-        estaActivo: { type: 'boolean', example: true },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado exitosamente',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para crear plan de estudio',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async createQueue(@Body() createPlanDeEstudioDto: CreatePlanDeEstudioDto) {
-    const result =
-      await this.planDeEstudioQueueService.enqueueCreatePlanDeEstudio(
-        createPlanDeEstudioDto,
-      );
-    return {
-      ...result,
-      message: 'Job encolado para crear plan de estudio',
-    };
+  @Get('')
+  findAllAsync() {
+    return this.planesDeEstudioService.findAll();
   }
 
-  @Get('/async')
-  @ApiOperation({ summary: 'Obtener todos los planes de estudio (asíncrono)' })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener planes de estudio',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener planes de estudio',
-        },
-      },
-    },
-  })
-  async findAllQueue() {
-    const result =
-      await this.planDeEstudioQueueService.enqueueFindAllPlanesDeEstudio();
-    return {
-      ...result,
-      message: 'Job encolado para obtener planes de estudio',
-    };
+  @Get(':id')
+  findOneAsync(@Param('id') id: string) {
+    return this.planesDeEstudioService.findOne(id);
   }
 
-  @Get('/async/:id')
-  @ApiOperation({ summary: 'Obtener plan de estudio por ID (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID del plan de estudio',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener plan de estudio',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener plan de estudio',
-        },
-      },
-    },
-  })
-  async findOneQueue(@Param('id') id: string) {
-    const result =
-      await this.planDeEstudioQueueService.enqueueFindOnePlanDeEstudio({ id });
-    return {
-      ...result,
-      message: 'Job encolado para obtener plan de estudio',
-    };
+  @Post('')
+  createAsync(@Body() createPlanDeEstudioDto: CreatePlanDeEstudioDto) {
+    return this.planesDeEstudioService.create(createPlanDeEstudioDto);
   }
 
-  @Patch('/async/:id')
-  @ApiOperation({ summary: 'Actualizar plan de estudio (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID del plan de estudio',
-    example: 'uuid-example',
-  })
-  @ApiBody({
-    description: 'Datos a actualizar del plan de estudio',
-    schema: {
-      type: 'object',
-      properties: {
-        version: { type: 'number', example: 1 },
-        carreraId: { type: 'string', example: 'uuid-carrera' },
-        estaActivo: { type: 'boolean', example: true },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para actualizar plan de estudio',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para actualizar plan de estudio',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async updateQueue(
+  @Patch(':id')
+  updateAsync(
     @Param('id') id: string,
     @Body() updatePlanDeEstudioDto: UpdatePlanDeEstudioDto,
   ) {
-    const result =
-      await this.planDeEstudioQueueService.enqueueUpdatePlanDeEstudio({
-        id,
-        ...updatePlanDeEstudioDto,
-      });
-    return {
-      ...result,
-      message: 'Job encolado para actualizar plan de estudio',
-    };
+    return this.planesDeEstudioService.update(id, updatePlanDeEstudioDto);
   }
 
-  @Delete('/async/:id')
-  @ApiOperation({ summary: 'Eliminar plan de estudio (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID del plan de estudio',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para eliminar plan de estudio',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para eliminar plan de estudio',
-        },
-      },
-    },
-  })
-  async removeQueue(@Param('id') id: string) {
-    const result =
-      await this.planDeEstudioQueueService.enqueueDeletePlanDeEstudio({ id });
-    return {
-      ...result,
-      message: 'Job encolado para eliminar plan de estudio',
-    };
+  @Delete(':id')
+  removeAsync(@Param('id') id: string) {
+    return this.planesDeEstudioService.remove(id);
   }
 }

@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   NotAcceptableException,
   NotFoundException,
@@ -15,18 +16,22 @@ export class BoletaGrupoMateriasService {
   async create(
     createBoletaGrupoMateriaDto: CreateBoletaGrupoMateriaDto,
   ): Promise<BoletaGrupoMateria> {
-    const createdBoletaGrupoMateria =
-      await this.prismaService.boletaGrupoMateria.create({
-        data: createBoletaGrupoMateriaDto,
-      });
-
-    if (!createdBoletaGrupoMateria) {
+    try {
+      const createdBoletaGrupoMateria =
+        await this.prismaService.boletaGrupoMateria.create({
+          data: createBoletaGrupoMateriaDto,
+        });
+      return createdBoletaGrupoMateria;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe una boleta grupo materia con esos datos únicos',
+        );
+      }
       throw new NotAcceptableException(
         'No se pudo crear la boleta grupo materia',
       );
     }
-
-    return createdBoletaGrupoMateria;
   }
 
   async findAll(): Promise<BoletaGrupoMateria[]> {
@@ -56,30 +61,38 @@ export class BoletaGrupoMateriasService {
     id: string,
     updateBoletaGrupoMateriaDto: UpdateBoletaGrupoMateriaDto,
   ): Promise<BoletaGrupoMateria> {
-    const updatedBoletaGrupoMateria =
-      await this.prismaService.boletaGrupoMateria.update({
-        where: { id },
-        data: updateBoletaGrupoMateriaDto,
-      });
-
-    if (!updatedBoletaGrupoMateria) {
-      throw new NotFoundException('Boleta grupo materia no encontrada');
+    try {
+      const updatedBoletaGrupoMateria =
+        await this.prismaService.boletaGrupoMateria.update({
+          where: { id },
+          data: updateBoletaGrupoMateriaDto,
+        });
+      return updatedBoletaGrupoMateria;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe una boleta grupo materia con esos datos únicos',
+        );
+      }
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Boleta grupo materia no encontrada');
+      }
+      throw error;
     }
-
-    return updatedBoletaGrupoMateria;
   }
 
-  async remove(id: string): Promise<BoletaGrupoMateria> {
-    const deletedBoletaGrupoMateria =
+  async remove(id: string): Promise<{ message: string }> {
+    try {
       await this.prismaService.boletaGrupoMateria.update({
         where: { id },
         data: { estaActivo: false },
       });
-
-    if (!deletedBoletaGrupoMateria) {
-      throw new NotFoundException('Boleta grupo materia no encontrada');
+      return { message: 'Boleta grupo materia eliminada exitosamente' };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Boleta grupo materia no encontrada');
+      }
+      throw error;
     }
-
-    return deletedBoletaGrupoMateria;
   }
 }

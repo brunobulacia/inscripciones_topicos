@@ -1,6 +1,6 @@
 import {
   Injectable,
-  NotAcceptableException,
+  ConflictException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateGrupoMateriaDto } from './dto/create-grupo_materia.dto';
@@ -15,15 +15,20 @@ export class GrupoMateriasService {
   async create(
     createGrupoMateriaDto: CreateGrupoMateriaDto,
   ): Promise<GrupoMateria> {
-    const createdGrupoMateria = await this.prismaService.grupoMateria.create({
-      data: createGrupoMateriaDto,
-    });
+    try {
+      const createdGrupoMateria = await this.prismaService.grupoMateria.create({
+        data: createGrupoMateriaDto,
+      });
 
-    if (!createdGrupoMateria) {
-      throw new NotAcceptableException('No se pudo crear el grupo materia');
+      return createdGrupoMateria;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe un grupo de materia con estos datos',
+        );
+      }
+      throw error;
     }
-
-    return createdGrupoMateria;
   }
 
   async findAll(): Promise<GrupoMateria[]> {
@@ -42,7 +47,7 @@ export class GrupoMateriasService {
     });
 
     if (!foundGrupoMateria) {
-      throw new NotFoundException('Grupo materia no encontrado');
+      throw new NotFoundException('Grupo de materia no encontrado');
     }
 
     return foundGrupoMateria;
@@ -52,28 +57,39 @@ export class GrupoMateriasService {
     id: string,
     updateGrupoMateriaDto: UpdateGrupoMateriaDto,
   ): Promise<GrupoMateria> {
-    const updatedGrupoMateria = await this.prismaService.grupoMateria.update({
-      where: { id },
-      data: updateGrupoMateriaDto,
-    });
+    try {
+      const updatedGrupoMateria = await this.prismaService.grupoMateria.update({
+        where: { id },
+        data: updateGrupoMateriaDto,
+      });
 
-    if (!updatedGrupoMateria) {
-      throw new NotFoundException('Grupo materia no encontrado');
+      return updatedGrupoMateria;
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Grupo de materia no encontrado');
+      }
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe un grupo de materia con estos datos',
+        );
+      }
+      throw error;
     }
-
-    return updatedGrupoMateria;
   }
 
-  async remove(id: string): Promise<GrupoMateria> {
-    const deletedGrupoMateria = await this.prismaService.grupoMateria.update({
-      where: { id },
-      data: { estaActivo: false },
-    });
+  async remove(id: string): Promise<{ message: string }> {
+    try {
+      await this.prismaService.grupoMateria.update({
+        where: { id },
+        data: { estaActivo: false },
+      });
 
-    if (!deletedGrupoMateria) {
-      throw new NotFoundException('Grupo materia no encontrado');
+      return { message: 'Grupo de materia eliminado exitosamente' };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Grupo de materia no encontrado');
+      }
+      throw error;
     }
-
-    return deletedGrupoMateria;
   }
 }

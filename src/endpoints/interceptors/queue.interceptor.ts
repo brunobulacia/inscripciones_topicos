@@ -21,28 +21,27 @@ export class QueueInterceptor implements NestInterceptor {
     private readonly colasService: ColasService,
   ) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+  async intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Promise<Observable<any>> {
     const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse<Response>();
-    
+
     const { method, path } = request;
-    
-    // Excluir rutas del sistema de la intercepción
+
     if (this.shouldSkipRoute(path)) {
       return next.handle();
     }
-    
-    // Verificar si esta ruta está asignada a alguna cola
+
     const endpoint = await this.endpointsService.findByRoute(path, method);
-    
+
     if (endpoint) {
       this.logger.log(`🎯 Interceptando ${method} ${path} -> Cola asignada`);
-      
+
       try {
-        // Generar UUID personalizado para el job
         const customJobId = uuidv4();
-        
-        // Crear job con la información de la request
+
         const jobData = {
           method,
           path,
@@ -56,47 +55,47 @@ export class QueueInterceptor implements NestInterceptor {
           ip: request.ip,
         };
 
-        // Obtener información de la cola para el nombre
         const cola = await this.colasService.findOne(endpoint.colaId);
-        
-        // Agregar job a la cola específica con el UUID personalizado
+
         const job = await this.colasService.addJob(cola.nombre, {
           name: `${method}-${path.replace(/\//g, '-')}`,
           data: {
             ...jobData,
-            customJobId, // Incluir el UUID personalizado en los datos del job
+            customJobId,
           },
           opts: {
-            jobId: customJobId, // Usar el UUID como ID del job en BullMQ
+            jobId: customJobId,
             attempts: 3,
             backoff: {
               type: 'exponential',
               delay: 2000,
             },
-            removeOnComplete: 50,
-            removeOnFail: 20,
+            removeOnComplete: false,
+            removeOnFail: false,
           },
         });
 
-        this.logger.log(`📋 Job creado: ${customJobId} en cola "${cola.nombre}" para ${method} ${path}`);
+        this.logger.log(
+          `📋 Job creado: ${customJobId} en cola "${cola.nombre}" para ${method} ${path}`,
+        );
 
-        // Agregar headers informativos a la respuesta
         response.setHeader('X-Queue-Processed', 'true');
         response.setHeader('X-Queue-Name', cola.nombre);
         response.setHeader('X-Job-Id', customJobId);
-        response.status(202); // Accepted - Request encolada
-        
-        // Devolver respuesta inmediata con el jobId UUID (sin ejecutar el handler original)
+        response.status(202);
+
         return of({
           jobId: customJobId,
           message: `Job created successfully for ${method} ${path}`,
           queueName: cola.nombre,
           status: 'queued',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-        
       } catch (error) {
-        this.logger.error(`❌ Error creando job para ${method} ${path}:`, error.message);
+        this.logger.error(
+          `❌ Error creando job para ${method} ${path}:`,
+          error.message,
+        );
         // Si falla la creación del job, continuamos con el procesamiento normal
         response.setHeader('X-Queue-Error', 'job-creation-failed');
       }
@@ -105,8 +104,10 @@ export class QueueInterceptor implements NestInterceptor {
     // Si no hay endpoint asignado, continuar con el procesamiento normal
     return next.handle().pipe(
       tap(() => {
-        this.logger.log(`✅ Request ${method} ${path} procesada sincrónicamente (sin cola asignada)`);
-      })
+        this.logger.log(
+          `✅ Request ${method} ${path} procesada sincrónicamente (sin cola asignada)`,
+        );
+      }),
     );
   }
 
@@ -117,7 +118,7 @@ export class QueueInterceptor implements NestInterceptor {
     const skipPaths = [
       '/api/docs',
       '/api/colas',
-      '/api/workers', 
+      '/api/workers',
       '/api/endpoints',
       '/admin/queues',
       '/health',
@@ -126,7 +127,7 @@ export class QueueInterceptor implements NestInterceptor {
       '/favicon.ico',
     ];
 
-    return skipPaths.some(skipPath => path.startsWith(skipPath));
+    return skipPaths.some((skipPath) => path.startsWith(skipPath));
   }
 
   /**
@@ -135,13 +136,13 @@ export class QueueInterceptor implements NestInterceptor {
   private sanitizeHeaders(headers: any): any {
     const sensitiveHeaders = ['authorization', 'cookie', 'x-api-key'];
     const sanitized = { ...headers };
-    
-    sensitiveHeaders.forEach(header => {
+
+    sensitiveHeaders.forEach((header) => {
       if (sanitized[header]) {
         sanitized[header] = '[REDACTED]';
       }
     });
-    
+
     return sanitized;
   }
 }

@@ -20,20 +20,15 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { PaginationDto } from './dto/pagination.dto';
-import { EstudianteQueueService } from './services/estudiante-queue.service';
 
 @ApiTags('estudiantes')
 @ApiBearerAuth()
 @Controller('estudiantes')
 export class EstudiantesController {
-  constructor(
-    private readonly estudiantesService: EstudiantesService,
-    private readonly estudianteQueueService: EstudianteQueueService,
-  ) {}
+  constructor(private readonly estudiantesService: EstudiantesService) {}
 
-  //METODOS SINCRONOS
-  @Get('/sync')
-  @ApiOperation({ summary: 'Obtener todos los estudiantes (sincrónico)' })
+  @Get()
+  @ApiOperation({ summary: 'Obtener todos los estudiantes' })
   @ApiResponse({
     status: 200,
     description: 'Estudiantes obtenidos exitosamente',
@@ -62,8 +57,8 @@ export class EstudiantesController {
     return this.estudiantesService.findAll(paginationDto);
   }
 
-  @Get('/sync/:id')
-  @ApiOperation({ summary: 'Obtener estudiante por ID (sincrónico)' })
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener estudiante por ID' })
   @ApiParam({
     name: 'id',
     description: 'ID del estudiante',
@@ -90,12 +85,13 @@ export class EstudiantesController {
       },
     },
   })
+  @ApiResponse({ status: 404, description: 'Estudiante no encontrado' })
   findOne(@Param('id') id: string) {
     return this.estudiantesService.findOne(id);
   }
 
-  @Post('/sync')
-  @ApiOperation({ summary: 'Crear nuevo estudiante (sincrónico)' })
+  @Post()
+  @ApiOperation({ summary: 'Crear nuevo estudiante' })
   @ApiBody({
     description: 'Datos del nuevo estudiante',
     schema: {
@@ -114,12 +110,34 @@ export class EstudiantesController {
       },
     },
   })
+  @ApiResponse({
+    status: 201,
+    description: 'Estudiante creado exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'uuid-example' },
+        nombre: { type: 'string', example: 'Juan' },
+        apellido_paterno: { type: 'string', example: 'Pérez' },
+        apellido_materno: { type: 'string', example: 'García' },
+        telefono: { type: 'string', example: '70123456' },
+        ci: { type: 'string', example: '12345678' },
+        email: { type: 'string', example: 'juan.perez@email.com' },
+        matricula: { type: 'string', example: 'EST001' },
+        ppac: { type: 'number', example: 0 },
+        estaActivo: { type: 'boolean', example: true },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
   create(@Body() createEstudianteDto: CreateEstudianteDto) {
     return this.estudiantesService.create(createEstudianteDto);
   }
 
-  @Patch('/sync/:id')
-  @ApiOperation({ summary: 'Actualizar estudiante (sincrónico)' })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar estudiante' })
   @ApiParam({
     name: 'id',
     description: 'ID del estudiante',
@@ -164,6 +182,7 @@ export class EstudiantesController {
       },
     },
   })
+  @ApiResponse({ status: 404, description: 'Estudiante no encontrado' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   update(
     @Param('id') id: string,
@@ -172,8 +191,8 @@ export class EstudiantesController {
     return this.estudiantesService.update(id, updateEstudianteDto);
   }
 
-  @Delete('/sync/:id')
-  @ApiOperation({ summary: 'Eliminar estudiante (sincrónico)' })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar estudiante' })
   @ApiParam({
     name: 'id',
     description: 'ID del estudiante',
@@ -192,189 +211,37 @@ export class EstudiantesController {
       },
     },
   })
+  @ApiResponse({ status: 404, description: 'Estudiante no encontrado' })
   remove(@Param('id') id: string) {
     return this.estudiantesService.remove(id);
   }
 
-  //METODOS ASINCRONOS
-  @Post('/async')
-  @ApiOperation({ summary: 'Crear nuevo estudiante (asíncrono)' })
-  @ApiBody({
-    description: 'Datos del estudiante a crear',
-    schema: {
-      type: 'object',
-      properties: {
-        nombre: { type: 'string', example: 'Juan' },
-        apellido_paterno: { type: 'string', example: 'Pérez' },
-        apellido_materno: { type: 'string', example: 'García' },
-        telefono: { type: 'string', example: '70123456' },
-        ci: { type: 'string', example: '12345678' },
-        email: { type: 'string', example: 'juan.perez@email.com' },
-        matricula: { type: 'string', example: 'EST001' },
-        password: { type: 'string', example: 'miPassword123' },
-        ppac: { type: 'number', example: 0 },
-        estaActivo: { type: 'boolean', example: true },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado exitosamente',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para crear estudiante',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async createQueue(@Body() createEstudianteDto: CreateEstudianteDto) {
-    const result =
-      await this.estudianteQueueService.createEstudiante(createEstudianteDto);
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para crear estudiante',
-    };
-  }
-
-  @Get('/async')
-  @ApiOperation({ summary: 'Obtener todos los estudiantes (asíncrono)' })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener estudiantes',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener estudiantes',
-        },
-      },
-    },
-  })
-  async findAllQueue(@Query() paginationDto: PaginationDto) {
-    const result =
-      await this.estudianteQueueService.findAllEstudiantes(paginationDto);
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para obtener estudiantes',
-    };
+  // METODOS ASINCRONOS VIA COLAS (BULLMQ)
+  @Get('/async/')
+  findAllAsync(@Query() paginationDto: PaginationDto) {
+    return this.estudiantesService.findAll(paginationDto);
   }
 
   @Get('/async/:id')
-  @ApiOperation({ summary: 'Obtener estudiante por ID (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID del estudiante',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para obtener estudiante',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para obtener estudiante',
-        },
-      },
-    },
-  })
-  async findOneQueue(@Param('id') id: string) {
-    const result = await this.estudianteQueueService.findOneEstudiante(id);
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para obtener estudiante',
-    };
+  findOneAsync(@Param('id') id: string) {
+    return this.estudiantesService.findOne(id);
+  }
+
+  @Post('/async/')
+  createAsync(@Body() createEstudianteDto: CreateEstudianteDto) {
+    return this.estudiantesService.create(createEstudianteDto);
   }
 
   @Patch('/async/:id')
-  @ApiOperation({ summary: 'Actualizar estudiante (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID del estudiante',
-    example: 'uuid-example',
-  })
-  @ApiBody({
-    description: 'Datos a actualizar del estudiante',
-    schema: {
-      type: 'object',
-      properties: {
-        nombre: { type: 'string', example: 'Juan' },
-        apellido_paterno: { type: 'string', example: 'Pérez' },
-        apellido_materno: { type: 'string', example: 'García' },
-        telefono: { type: 'string', example: '70123456' },
-        ci: { type: 'string', example: '12345678' },
-        email: { type: 'string', example: 'juan.perez@email.com' },
-        matricula: { type: 'string', example: 'EST001' },
-        password: { type: 'string', example: 'miPassword123' },
-        ppac: { type: 'number', example: 0 },
-        estaActivo: { type: 'boolean', example: true },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para actualizar estudiante',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para actualizar estudiante',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async updateQueue(
+  updateAsync(
     @Param('id') id: string,
     @Body() updateEstudianteDto: UpdateEstudianteDto,
   ) {
-    const result = await this.estudianteQueueService.updateEstudiante(
-      id,
-      updateEstudianteDto,
-    );
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para actualizar estudiante',
-    };
+    return this.estudiantesService.update(id, updateEstudianteDto);
   }
 
   @Delete('/async/:id')
-  @ApiOperation({ summary: 'Eliminar estudiante (asíncrono)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID del estudiante',
-    example: 'uuid-example',
-  })
-  @ApiResponse({
-    status: 202,
-    description: 'Job encolado para eliminar estudiante',
-    schema: {
-      type: 'object',
-      properties: {
-        jobId: { type: 'string', example: 'job-uuid' },
-        message: {
-          type: 'string',
-          example: 'Job encolado para eliminar estudiante',
-        },
-      },
-    },
-  })
-  async removeQueue(@Param('id') id: string) {
-    const result = await this.estudianteQueueService.deleteEstudiante(id);
-    return {
-      jobId: result.jobId,
-      message: 'Job encolado para eliminar estudiante',
-    };
+  removeAsync(@Param('id') id: string) {
+    return this.estudiantesService.remove(id);
   }
 }
