@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsUUID, IsIn, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsUUID,
+  IsIn,
+  IsOptional,
+} from 'class-validator';
 
 export class AssignEndpointDto {
   @IsString()
@@ -9,10 +15,6 @@ export class AssignEndpointDto {
   @IsNotEmpty()
   @IsIn(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
   metodo: string;
-
-  @IsString()
-  @IsOptional()
-  descripcion?: string;
 }
 
 export class UnassignEndpointDto {

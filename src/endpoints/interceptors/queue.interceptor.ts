@@ -11,6 +11,7 @@ import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { EndpointsService } from '../endpoints.service';
 import { ColasService } from '../../colas/colas.service';
+import { LoadBalancerService } from '../services/load-balancer.service';
 
 @Injectable()
 export class QueueInterceptor implements NestInterceptor {
@@ -19,6 +20,7 @@ export class QueueInterceptor implements NestInterceptor {
   constructor(
     private readonly endpointsService: EndpointsService,
     private readonly colasService: ColasService,
+    private readonly loadBalancerService: LoadBalancerService,
   ) {}
 
   async intercept(
@@ -34,12 +36,30 @@ export class QueueInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const endpoint = await this.endpointsService.findByRoute(path, method);
+    // Verificar si existe al menos un endpoint para esta ruta
+    const hasEndpoint = await this.endpointsService.hasActiveEndpoint(
+      path,
+      method,
+    );
 
-    if (endpoint) {
-      this.logger.log(`🎯 Interceptando ${method} ${path} -> Cola asignada`);
+    if (hasEndpoint) {
+      this.logger.log(
+        `🎯 Interceptando ${method} ${path} -> Usando balanceador de carga`,
+      );
 
       try {
+        // Inyectar las colas dinámicas en el load balancer
+        this.loadBalancerService.setDynamicQueues(
+          this.colasService.getDinamicQueues(),
+        );
+
+        // Usar el load balancer para seleccionar la mejor cola
+        const balancerResult = await this.loadBalancerService.selectBestQueue(
+          path,
+          method,
+          'least-loaded', // Estrategia por defecto
+        );
+
         const customJobId = uuidv4();
 
         const jobData = {
@@ -50,54 +70,79 @@ export class QueueInterceptor implements NestInterceptor {
           body: request.body,
           headers: this.sanitizeHeaders(request.headers),
           timestamp: new Date().toISOString(),
-          endpointId: endpoint.id,
+          endpointId: balancerResult.selectedQueue.colaId,
           userAgent: request.get('User-Agent'),
           ip: request.ip,
         };
 
-        const cola = await this.colasService.findOne(endpoint.colaId);
-
-        const job = await this.colasService.addJob(cola.nombre, {
-          name: `${method}-${path.replace(/\//g, '-')}`,
-          data: {
-            ...jobData,
-            customJobId,
-          },
-          opts: {
-            jobId: customJobId,
-            attempts: 3,
-            backoff: {
-              type: 'exponential',
-              delay: 2000,
+        const job = await this.colasService.addJob(
+          balancerResult.selectedQueue.nombre,
+          {
+            name: `${method}-${path.replace(/\//g, '-')}`,
+            data: {
+              ...jobData,
+              customJobId,
             },
-            removeOnComplete: false,
-            removeOnFail: false,
+            opts: {
+              jobId: customJobId,
+              attempts: 3,
+              backoff: {
+                type: 'exponential',
+                delay: 2000,
+              },
+              removeOnComplete: false,
+              removeOnFail: false,
+            },
           },
-        });
+        );
 
         this.logger.log(
-          `📋 Job creado: ${customJobId} en cola "${cola.nombre}" para ${method} ${path}`,
+          `📋 Job creado: ${customJobId} en cola "${balancerResult.selectedQueue.nombre}" ` +
+            `(carga: ${balancerResult.selectedQueue.load}) para ${method} ${path} ` +
+            `usando estrategia "${balancerResult.strategy}"`,
         );
 
         response.setHeader('X-Queue-Processed', 'true');
-        response.setHeader('X-Queue-Name', cola.nombre);
+        response.setHeader('X-Queue-Name', balancerResult.selectedQueue.nombre);
+        response.setHeader(
+          'X-Queue-Load',
+          balancerResult.selectedQueue.load.toString(),
+        );
+        response.setHeader('X-Load-Balancer-Strategy', balancerResult.strategy);
+        response.setHeader(
+          'X-Available-Queues',
+          balancerResult.allQueues.length.toString(),
+        );
         response.setHeader('X-Job-Id', customJobId);
         response.status(202);
 
         return of({
           jobId: customJobId,
           message: `Job created successfully for ${method} ${path}`,
-          queueName: cola.nombre,
+          queueName: balancerResult.selectedQueue.nombre,
+          queueLoad: balancerResult.selectedQueue.load,
+          strategy: balancerResult.strategy,
+          availableQueues: balancerResult.allQueues.length,
           status: 'queued',
           timestamp: new Date().toISOString(),
+          loadBalancing: {
+            selectedQueue: balancerResult.selectedQueue,
+            allQueues: balancerResult.allQueues.map((q) => ({
+              nombre: q.nombre,
+              load: q.totalLoad,
+              workers: q.workersCount,
+              waiting: q.waitingJobs,
+              active: q.activeJobs,
+            })),
+          },
         });
       } catch (error) {
         this.logger.error(
-          `❌ Error creando job para ${method} ${path}:`,
+          `❌ Error en balanceador para ${method} ${path}:`,
           error.message,
         );
-        // Si falla la creación del job, continuamos con el procesamiento normal
-        response.setHeader('X-Queue-Error', 'job-creation-failed');
+        // Si falla el balanceador, continuamos con el procesamiento normal
+        response.setHeader('X-Queue-Error', 'load-balancer-failed');
       }
     }
 

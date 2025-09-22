@@ -3,6 +3,7 @@ import { EndpointsService } from './endpoints.service';
 import { EndpointsController } from './endpoints.controller';
 import { AutoQueueService } from './services/auto-queue.service';
 import { EndpointExecutorService } from './services/endpoint-executor.service';
+import { LoadBalancerService } from './services/load-balancer.service';
 import { QueueInterceptor } from './interceptors/queue.interceptor';
 import { EndpointProcessor } from './processors/endpoint.processor';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -62,6 +63,7 @@ import { AulaGrupoMateriasModule } from 'src/aula_grupo_materias/aula_grupo_mate
     EndpointsService,
     AutoQueueService,
     EndpointExecutorService,
+    LoadBalancerService,
     QueueInterceptor,
     EndpointProcessor,
   ],
@@ -69,6 +71,7 @@ import { AulaGrupoMateriasModule } from 'src/aula_grupo_materias/aula_grupo_mate
     EndpointsService,
     AutoQueueService,
     EndpointExecutorService,
+    LoadBalancerService,
     QueueInterceptor,
   ],
 })

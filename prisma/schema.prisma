@@ -306,14 +306,15 @@ model OfertaGrupoMateria {
 }
 
 model Cola {
-  id          String     @id @default(uuid())
-  nombre      String     @unique
-  descripcion String?
-  workers     Worker[]
-  endpoints   Endpoint[]
-  estaActiva  Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id            String         @id @default(uuid())
+  nombre        String         @unique
+  descripcion   String?
+  workers       Worker[]
+  // Relación many-to-many con Endpoints
+  colaEndpoints ColaEndpoint[]
+  estaActiva    Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model Worker {
@@ -330,15 +331,32 @@ model Worker {
 }
 
 model Endpoint {
-  id          String   @id @default(uuid())
-  ruta        String // "/api/carreras"
-  metodo      String // "GET", "POST", "PUT", "DELETE"
-  descripcion String?
-  colaId      String
-  cola        Cola     @relation(fields: [colaId], references: [id])
-  estaActivo  Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String         @id @default(uuid())
+  ruta          String // "/api/carreras"
+  metodo        String // "GET", "POST", "PUT", "DELETE"
+  // Relación many-to-many con Colas
+  colaEndpoints ColaEndpoint[]
+  estaActivo    Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
+  // Un endpoint único por ruta y método
   @@unique([ruta, metodo])
+}
+
+// Tabla intermedia para relación many-to-many
+model ColaEndpoint {
+  id         String   @id @default(uuid())
+  colaId     String
+  cola       Cola     @relation(fields: [colaId], references: [id], onDelete: Cascade)
+  endpointId String
+  endpoint   Endpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+  // Configuración específica para esta combinación cola-endpoint
+  prioridad  Int      @default(1) // Para ordenar preferencias
+  estaActivo Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Una cola no puede tener el mismo endpoint duplicado
+  @@unique([colaId, endpointId])
 }

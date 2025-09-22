@@ -51,8 +51,8 @@ export class ColasService {
       );
     }
 
-    // Extraer workers del DTO y crear datos para la cola sin workers
-    const { workers, ...colaData } = createColaDto;
+    // Extraer workers y endpoints del DTO y crear datos para la cola sin workers ni endpoints
+    const { workers, endpoints, ...colaData } = createColaDto;
 
     const cola = await this.prisma.cola.create({
       data: colaData,
@@ -89,19 +89,93 @@ export class ColasService {
       }
     }
 
+    // Si se proporcionó array de endpoints, crear y asignar automáticamente los endpoints
+    if (endpoints && endpoints.length > 0) {
+      this.logger.log(
+        `Creando y asignando ${endpoints.length} endpoints para la cola "${cola.nombre}"`,
+      );
+
+      for (const endpointData of endpoints) {
+        try {
+          // Buscar si el endpoint ya existe
+          let endpoint = await this.prisma.endpoint.findUnique({
+            where: {
+              ruta_metodo: {
+                ruta: endpointData.ruta,
+                metodo: endpointData.metodo.toUpperCase(),
+              },
+            },
+          });
+
+          // Si no existe, crearlo
+          if (!endpoint) {
+            endpoint = await this.prisma.endpoint.create({
+              data: {
+                ruta: endpointData.ruta,
+                metodo: endpointData.metodo.toUpperCase(),
+              },
+            });
+            this.logger.log(
+              `Endpoint "${endpointData.metodo} ${endpointData.ruta}" creado`,
+            );
+          }
+
+          // Verificar si ya está asignado a esta cola
+          const existingAssignment = await this.prisma.colaEndpoint.findUnique({
+            where: {
+              colaId_endpointId: {
+                colaId: cola.id,
+                endpointId: endpoint.id,
+              },
+            },
+          });
+
+          if (!existingAssignment) {
+            // Asignar endpoint a la cola
+            await this.prisma.colaEndpoint.create({
+              data: {
+                colaId: cola.id,
+                endpointId: endpoint.id,
+                prioridad: endpointData.prioridad || 1,
+              },
+            });
+
+            this.logger.log(
+              `Endpoint "${endpointData.metodo} ${endpointData.ruta}" asignado a cola "${cola.nombre}" con prioridad ${endpointData.prioridad || 1}`,
+            );
+          } else {
+            this.logger.warn(
+              `Endpoint "${endpointData.metodo} ${endpointData.ruta}" ya está asignado a cola "${cola.nombre}"`,
+            );
+          }
+        } catch (error) {
+          this.logger.error(
+            `Error creando/asignando endpoint "${endpointData.metodo} ${endpointData.ruta}" para cola "${cola.nombre}": ${error.message}`,
+          );
+          // Continuar con los demás endpoints aunque uno falle
+        }
+      }
+    }
+
     this.logger.log(`Cola "${cola.nombre}" creada exitosamente`);
 
-    // Retornar la cola con sus workers creados
-    const colaWithWorkers = await this.prisma.cola.findUnique({
+    // Retornar la cola con sus workers y endpoints creados
+    const colaWithRelations = await this.prisma.cola.findUnique({
       where: { id: cola.id },
       include: {
         workers: {
           where: { estaActivo: true },
         },
+        colaEndpoints: {
+          where: { estaActivo: true },
+          include: {
+            endpoint: true,
+          },
+        },
       },
     });
 
-    return this.mapToResponseDto(colaWithWorkers);
+    return this.mapToResponseDto(colaWithRelations);
   }
 
   async findAll(): Promise<ColaResponseDto[]> {
@@ -110,6 +184,12 @@ export class ColasService {
       include: {
         workers: {
           where: { estaActivo: true },
+        },
+        colaEndpoints: {
+          where: { estaActivo: true },
+          include: {
+            endpoint: true,
+          },
         },
       },
     });
@@ -123,6 +203,12 @@ export class ColasService {
       include: {
         workers: {
           where: { estaActivo: true },
+        },
+        colaEndpoints: {
+          where: { estaActivo: true },
+          include: {
+            endpoint: true,
+          },
         },
       },
     });
@@ -140,6 +226,12 @@ export class ColasService {
       include: {
         workers: {
           where: { estaActivo: true },
+        },
+        colaEndpoints: {
+          where: { estaActivo: true },
+          include: {
+            endpoint: true,
+          },
         },
       },
     });
@@ -200,7 +292,12 @@ export class ColasService {
       where: { id },
       include: {
         workers: { where: { estaActivo: true } },
-        endpoints: { where: { estaActivo: true } },
+        colaEndpoints: {
+          where: { estaActivo: true },
+          include: {
+            endpoint: true,
+          },
+        },
       },
     });
 
@@ -212,21 +309,24 @@ export class ColasService {
       `Iniciando eliminación en cascada para cola "${cola.nombre}"`,
     );
 
-    // 1. Eliminar todos los endpoints asociados a la cola
-    if (cola.endpoints && cola.endpoints.length > 0) {
+    // 1. Desasignar todos los endpoints asociados a la cola
+    if (cola.colaEndpoints && cola.colaEndpoints.length > 0) {
       this.logger.log(
-        `Eliminando ${cola.endpoints.length} endpoints asociados a la cola "${cola.nombre}"`,
+        `Desasignando ${cola.colaEndpoints.length} endpoints asociados a la cola "${cola.nombre}"`,
       );
 
-      for (const endpoint of cola.endpoints) {
+      for (const colaEndpoint of cola.colaEndpoints) {
         try {
-          await this.endpointsService.remove(endpoint.id);
+          await this.prisma.colaEndpoint.update({
+            where: { id: colaEndpoint.id },
+            data: { estaActivo: false },
+          });
           this.logger.log(
-            `Endpoint ${endpoint.metodo} ${endpoint.ruta} eliminado exitosamente`,
+            `Endpoint ${colaEndpoint.endpoint.metodo} ${colaEndpoint.endpoint.ruta} desasignado exitosamente`,
           );
         } catch (error) {
           this.logger.error(
-            `Error eliminando endpoint ${endpoint.metodo} ${endpoint.ruta}: ${error.message}`,
+            `Error desasignando endpoint ${colaEndpoint.endpoint.metodo} ${colaEndpoint.endpoint.ruta}: ${error.message}`,
           );
           // Continuar con los demás endpoints aunque uno falle
         }
@@ -417,6 +517,15 @@ export class ColasService {
       estaActiva: cola.estaActiva,
       createdAt: cola.createdAt,
       updatedAt: cola.updatedAt,
+      endpoints:
+        cola.colaEndpoints?.map((ce: any) => ({
+          id: ce.id,
+          endpointId: ce.endpoint.id,
+          ruta: ce.endpoint.ruta,
+          metodo: ce.endpoint.metodo,
+          prioridad: ce.prioridad,
+          estaActivo: ce.estaActivo,
+        })) || [],
     };
   }
 
