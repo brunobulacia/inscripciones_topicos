@@ -33,7 +33,6 @@ export class ColasService {
     @Inject(forwardRef(() => EndpointsService))
     private readonly endpointsService: EndpointsService,
   ) {
-    // Configuración de Redis usando la misma configuración del app.module
     this.redisConnection = {
       host: 'localhost',
       port: 6379,
@@ -474,19 +473,11 @@ export class ColasService {
           removeOnComplete: false,
           removeOnFail: false,
           attempts: 3,
-          /* backoff: {
-            type: 'exponential',
-            delay: 2000,
-          }, */
         },
       });
 
       this.dinamicQueues.set(nombreCola, queue);
       this.dashboardService.addQueue(queue);
-
-      this.logger.log(
-        `Cola BullMQ "${nombreCola}" creada y registrada en el dashboard`,
-      );
     } catch (error) {
       this.logger.error(`Error creando cola BullMQ "${nombreCola}":`, error);
       throw error;
@@ -609,7 +600,6 @@ export class ColasService {
     }
   }
 
-  // Métodos para limpiar y sincronizar Redis
   async cleanupRedis(): Promise<{
     message: string;
     cleaned: string[];

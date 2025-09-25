@@ -13,20 +13,27 @@ export class DynamicQueuesBootstrapService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     try {
-      this.logger.log('🚀 Iniciando sistema de colas dinámicas...');
+      console.log('\nIniciando sistema de colas dinámicas\n');
 
       // Inicializar colas existentes
       await this.colasService.initializeExistingQueues();
 
-      // Inicializar workers existentes
       await this.workersService.initializeExistingWorkers();
 
-      this.logger.log('✅ Sistema de colas dinámicas inicializado correctamente');
-      this.logger.log('📊 Dashboard disponible en: http://localhost:3000/admin/queues');
-      this.logger.log('🔧 API de colas disponible en: http://localhost:3000/api/colas');
-      this.logger.log('👷 API de workers disponible en: http://localhost:3000/api/workers');
+      this.logger.log(
+        '\nSistema de colas dinámicas inicializado correctamente',
+      );
+      this.logger.log(
+        'Dashboard disponible en: http://localhost:3000/admin/queues',
+      );
+      this.logger.log(
+        'API de colas disponible en: http://localhost:3000/api/colas',
+      );
+      this.logger.log(
+        'API de workers disponible en: http://localhost:3000/api/workers',
+      );
     } catch (error) {
-      this.logger.error('❌ Error iniciando sistema de colas dinámicas:', error);
+      this.logger.error('Error iniciando sistema de colas dinámicas:', error);
     }
   }
 }

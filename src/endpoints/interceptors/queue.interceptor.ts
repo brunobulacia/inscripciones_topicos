@@ -121,7 +121,7 @@ export class QueueInterceptor implements NestInterceptor {
           message: `Job created successfully for ${method} ${path}`,
           queueName: balancerResult.selectedQueue.nombre,
           queueLoad: balancerResult.selectedQueue.load,
-          strategy: balancerResult.strategy,
+          // strategy: balancerResult.strategy,
           availableQueues: balancerResult.allQueues.length,
           status: 'queued',
           timestamp: new Date().toISOString(),
