@@ -30,6 +30,7 @@ import { BoletaGrupoMateriasModule } from 'src/boleta_grupo_materias/boleta_grup
 import { AvanceAcademicoModule } from 'src/avance_academico/avance_academico.module';
 import { AulasModule } from 'src/aulas/aulas.module';
 import { AulaGrupoMateriasModule } from 'src/aula_grupo_materias/aula_grupo_materias.module';
+import { InscripcionModule } from 'src/transactions/inscripcion/inscripcion.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { AulaGrupoMateriasModule } from 'src/aula_grupo_materias/aula_grupo_mate
     AvanceAcademicoModule,
     AulasModule,
     AulaGrupoMateriasModule,
+    InscripcionModule,
   ],
   controllers: [EndpointsController],
   providers: [

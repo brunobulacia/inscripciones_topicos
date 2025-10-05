@@ -7,5 +7,6 @@ import { PrismaModule } from 'src/prisma/prisma.module';
   imports: [PrismaModule],
   providers: [InscripcionService],
   controllers: [InscripcionController],
+  exports: [InscripcionService],
 })
 export class InscripcionModule {}

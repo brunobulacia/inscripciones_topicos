@@ -21,6 +21,7 @@ import { EstudiantesService } from '../../estudiantes/estudiantes.service';
 import { ModulosService } from '../../modulos/modulos.service';
 import { AulasService } from '../../aulas/aulas.service';
 import { AulaGrupoMateriasService } from '../../aula_grupo_materias/aula_grupo_materias.service';
+import { InscripcionService } from 'src/transactions/inscripcion/inscripcion.service';
 @Injectable()
 export class EndpointExecutorService {
   private readonly logger = new Logger(EndpointExecutorService.name);
@@ -48,6 +49,7 @@ export class EndpointExecutorService {
     private readonly modulosService: ModulosService,
     private readonly aulasService: AulasService,
     private readonly aulaGrupoMateriasService: AulaGrupoMateriasService,
+    private readonly inscripcionService: InscripcionService,
   ) {}
 
   async executeEndpoint(method: string, path: string, data: any): Promise<any> {
@@ -371,6 +373,12 @@ export class EndpointExecutorService {
 
     // Mapear rutas de horarios
     routeMap.set('GET /api/horarios/async/', {
+      service: this.horariosService,
+      methodName: 'findAll',
+      params: [],
+    });
+    // Permitir también la ruta sin barra final
+    routeMap.set('GET /api/horarios/async', {
       service: this.horariosService,
       methodName: 'findAll',
       params: [],
@@ -778,6 +786,12 @@ export class EndpointExecutorService {
       params: ['id'],
     });
 
+    routeMap.set('POST /api/inscripcion/async/', {
+      service: this.inscripcionService,
+      methodName: 'inscripcion',
+      params: [],
+    });
+
     return routeMap;
   }
 
@@ -801,7 +815,12 @@ export class EndpointExecutorService {
       const args = [...params];
 
       // Para métodos que requieren body (POST, PATCH)
-      if (body && (methodName === 'create' || methodName === 'update')) {
+      if (
+        body &&
+        (methodName === 'create' ||
+          methodName === 'update' ||
+          methodName === 'inscripcion')
+      ) {
         if (methodName === 'update') {
           args.push(body);
         } else {

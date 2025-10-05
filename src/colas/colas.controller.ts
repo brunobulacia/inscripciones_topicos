@@ -148,8 +148,88 @@ export class ColasController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar una cola' })
+  @ApiOperation({
+    summary: 'Actualizar una cola',
+    description:
+      'Actualiza una cola existente. Puede modificar el nombre, descripción, estado, workers y endpoints. Si se proporcionan workers o endpoints, se reemplazan completamente los existentes.',
+  })
   @ApiParam({ name: 'id', description: 'ID de la cola' })
+  @ApiBody({
+    description:
+      'Datos para actualizar la cola. Los campos workers y endpoints son opcionales.',
+    schema: {
+      type: 'object',
+      properties: {
+        nombre: {
+          type: 'string',
+          description: 'Nuevo nombre de la cola',
+          example: 'Cola3',
+        },
+        descripcion: {
+          type: 'string',
+          description: 'Nueva descripción de la cola',
+          example: 'Segunda cola para load balancing',
+        },
+        estaActiva: {
+          type: 'boolean',
+          description: 'Estado de la cola',
+          example: true,
+        },
+        workers: {
+          type: 'array',
+          description:
+            'Array de concurrencias para workers. Reemplaza todos los workers existentes.',
+          items: {
+            type: 'number',
+            minimum: 1,
+          },
+          example: [1, 2, 4],
+        },
+        endpoints: {
+          type: 'array',
+          description:
+            'Array de endpoints. Reemplaza todos los endpoints existentes.',
+          items: {
+            type: 'object',
+            properties: {
+              ruta: {
+                type: 'string',
+                example: '/api/horarios/async',
+              },
+              metodo: {
+                type: 'string',
+                enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+                example: 'GET',
+              },
+              prioridad: {
+                type: 'number',
+                minimum: 1,
+                example: 1,
+              },
+            },
+            required: ['ruta', 'metodo'],
+          },
+          example: [
+            {
+              ruta: '/api/horarios/async',
+              metodo: 'GET',
+              prioridad: 1,
+            },
+            {
+              ruta: '/api/prerequisitos/async',
+              metodo: 'GET',
+              prioridad: 1,
+            },
+            {
+              ruta: '/api/prerequisitos/async',
+              metodo: 'POST',
+              prioridad: 1,
+            },
+          ],
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: 200,
     description: 'Cola actualizada exitosamente',

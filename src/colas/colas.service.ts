@@ -248,6 +248,13 @@ export class ColasService {
   ): Promise<ColaResponseDto> {
     const existingCola = await this.prisma.cola.findUnique({
       where: { id },
+      include: {
+        workers: { where: { estaActivo: true } },
+        colaEndpoints: {
+          where: { estaActivo: true },
+          include: { endpoint: true },
+        },
+      },
     });
 
     if (!existingCola) {
@@ -267,10 +274,172 @@ export class ColasService {
       }
     }
 
+    // Extraer workers y endpoints del DTO para manejar por separado
+    const { workers, endpoints, ...colaData } = updateColaDto;
+
+    // Actualizar datos básicos de la cola
     const updatedCola = await this.prisma.cola.update({
       where: { id },
-      data: updateColaDto,
+      data: colaData,
     });
+
+    // Manejar actualización de workers si se proporcionó
+    if (workers && workers.length > 0) {
+      this.logger.log(
+        `Actualizando workers para la cola "${updatedCola.nombre}". Nuevos workers: ${workers.length}`,
+      );
+
+      // Eliminar workers existentes
+      if (existingCola.workers && existingCola.workers.length > 0) {
+        for (const worker of existingCola.workers) {
+          try {
+            await this.workersService.remove(worker.id);
+            this.logger.log(`Worker "${worker.nombre}" eliminado`);
+          } catch (error) {
+            this.logger.error(
+              `Error eliminando worker "${worker.nombre}": ${error.message}`,
+            );
+          }
+        }
+      }
+
+      // Crear nuevos workers
+      for (let i = 0; i < workers.length; i++) {
+        const concurrencia = workers[i];
+        const workerName = `worker-${i + 1}-${updatedCola.nombre}`;
+
+        try {
+          // Verificar si ya existe un worker activo con este nombre
+          const existingWorker = await this.prisma.worker.findFirst({
+            where: {
+              nombre: workerName,
+              colaId: updatedCola.id,
+              estaActivo: true,
+            },
+          });
+
+          if (existingWorker) {
+            // Si ya existe y está activo, actualizar su concurrencia
+            await this.prisma.worker.update({
+              where: { id: existingWorker.id },
+              data: { concurrencia },
+            });
+            this.logger.log(
+              `Worker "${workerName}" ya existe, actualizada concurrencia a ${concurrencia}`,
+            );
+          } else {
+            // Si no existe o está inactivo, intentar crear uno nuevo
+            try {
+              await this.workersService.create({
+                nombre: workerName,
+                concurrencia: concurrencia,
+                colaId: updatedCola.id,
+              });
+
+              this.logger.log(
+                `Worker "${workerName}" creado con concurrencia ${concurrencia}`,
+              );
+            } catch (createError) {
+              // Si falla por conflicto, verificar si es un worker inactivo y reactivarlo
+              if (createError.message.includes('ya existe')) {
+                const inactiveWorker = await this.prisma.worker.findFirst({
+                  where: {
+                    nombre: workerName,
+                    colaId: updatedCola.id,
+                    estaActivo: false,
+                  },
+                });
+
+                if (inactiveWorker) {
+                  // Reactivar el worker existente
+                  await this.prisma.worker.update({
+                    where: { id: inactiveWorker.id },
+                    data: {
+                      estaActivo: true,
+                      concurrencia: concurrencia,
+                    },
+                  });
+
+                  this.logger.log(
+                    `Worker "${workerName}" reactivado con concurrencia ${concurrencia}`,
+                  );
+                } else {
+                  throw createError;
+                }
+              } else {
+                throw createError;
+              }
+            }
+          }
+        } catch (error) {
+          this.logger.error(
+            `Error creando worker "${workerName}": ${error.message}`,
+          );
+        }
+      }
+    }
+
+    // Manejar actualización de endpoints si se proporcionó
+    if (endpoints && endpoints.length > 0) {
+      this.logger.log(
+        `Actualizando endpoints para la cola "${updatedCola.nombre}". Nuevos endpoints: ${endpoints.length}`,
+      );
+
+      // Eliminar TODOS los endpoints existentes para permitir reasignación
+      await this.prisma.colaEndpoint.deleteMany({
+        where: {
+          colaId: updatedCola.id,
+        },
+      });
+      this.logger.log(
+        `Todos los endpoints eliminados de la cola "${updatedCola.nombre}"`,
+      );
+
+      // Crear y asignar nuevos endpoints
+      for (const endpointData of endpoints) {
+        try {
+          // Buscar si el endpoint ya existe
+          let endpoint = await this.prisma.endpoint.findUnique({
+            where: {
+              ruta_metodo: {
+                ruta: endpointData.ruta,
+                metodo: endpointData.metodo.toUpperCase(),
+              },
+            },
+          });
+
+          // Si no existe, crearlo
+          if (!endpoint) {
+            endpoint = await this.prisma.endpoint.create({
+              data: {
+                ruta: endpointData.ruta,
+                metodo: endpointData.metodo.toUpperCase(),
+              },
+            });
+            this.logger.log(
+              `Endpoint "${endpointData.metodo} ${endpointData.ruta}" creado`,
+            );
+          }
+
+          // Asignar endpoint a la cola (como ya desactivamos todos los existentes, podemos crear nuevos)
+          await this.prisma.colaEndpoint.create({
+            data: {
+              colaId: updatedCola.id,
+              endpointId: endpoint.id,
+              prioridad: endpointData.prioridad || 1,
+            },
+          });
+
+          this.logger.log(
+            `Endpoint "${endpointData.metodo} ${endpointData.ruta}" asignado a cola "${updatedCola.nombre}" con prioridad ${endpointData.prioridad || 1}`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Error creando/asignando endpoint "${endpointData.metodo} ${endpointData.ruta}": ${error.message}`,
+          );
+        }
+      }
+    }
 
     // Si se desactivó la cola, cerrar la cola de BullMQ
     if (updateColaDto.estaActiva === false) {
@@ -283,7 +452,23 @@ export class ColasService {
 
     this.logger.log(`Cola "${updatedCola.nombre}" actualizada exitosamente`);
 
-    return this.mapToResponseDto(updatedCola);
+    // Retornar la cola actualizada con sus workers y endpoints
+    const colaWithRelations = await this.prisma.cola.findUnique({
+      where: { id: updatedCola.id },
+      include: {
+        workers: {
+          where: { estaActivo: true },
+        },
+        colaEndpoints: {
+          where: { estaActivo: true },
+          include: {
+            endpoint: true,
+          },
+        },
+      },
+    });
+
+    return this.mapToResponseDto(colaWithRelations);
   }
 
   async remove(id: string): Promise<void> {

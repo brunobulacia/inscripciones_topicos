@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { InscripcionService } from './inscripcion.service';
 import type { CreateInscripcionDto } from './dto/create-inscripcion.dto';
 
@@ -8,6 +8,11 @@ export class InscripcionController {
 
   @Post()
   inscripcion(@Body() createInscripcionDto: CreateInscripcionDto) {
+    return this.inscripcionService.inscripcion(createInscripcionDto);
+  }
+
+  @Post('/async/')
+  inscripcionAsync(@Body() createInscripcionDto: CreateInscripcionDto) {
     return this.inscripcionService.inscripcion(createInscripcionDto);
   }
 }

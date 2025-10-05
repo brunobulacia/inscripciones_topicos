@@ -164,7 +164,7 @@ export class InscripcionService {
     for (const materia of materiasConCupo) {
       await prisma.grupoMateria.update({
         where: { id: materia.OfertaGrupoMateria.GrupoMateria.id },
-        data: { cupos: { decrement: 1 } },
+        data: { cupos: { decrement: 1 }, inscritos: { increment: 1 } },
       });
     }
 
