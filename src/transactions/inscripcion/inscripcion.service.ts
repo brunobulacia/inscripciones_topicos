@@ -2,6 +2,7 @@ import {
   Injectable,
   NotAcceptableException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateInscripcionDto } from './dto/create-inscripcion.dto';
@@ -70,6 +71,16 @@ export class InscripcionService {
 
     // Para cada grupoMateriaId solicitado, tomar solo la primera oferta disponible
     const materias: typeof todasLasMaterias = [];
+
+    if (
+      !createInscripcionDto.materiasId ||
+      !Array.isArray(createInscripcionDto.materiasId)
+    ) {
+      throw new BadRequestException(
+        'materiasId es requerido y debe ser un array',
+      );
+    }
+
     for (const grupoMateriaId of createInscripcionDto.materiasId) {
       const primeraOferta = todasLasMaterias.find(
         (m) => m.grupoMateriaId === grupoMateriaId,
@@ -80,14 +91,14 @@ export class InscripcionService {
     }
 
     console.log('📚 Materias encontradas:', materias.length);
-    console.log('📝 IDs solicitados:', createInscripcionDto.materiasId.length);
+    console.log('📝 IDs solicitados:', createInscripcionDto.materiasId!.length);
 
     //VALIDAR SI EL ESTUDIANTE QUIERE INSCRIBIR MAS DE 7 MATERIAS
-    if (materias.length !== createInscripcionDto.materiasId.length) {
+    if (materias.length !== createInscripcionDto.materiasId!.length) {
       console.log('❌ ERROR: No se encontraron todas las materias');
       console.log(
         'IDs buscados (grupoMateriaId):',
-        createInscripcionDto.materiasId,
+        createInscripcionDto.materiasId!,
       );
       console.log(
         'Materias encontradas:',

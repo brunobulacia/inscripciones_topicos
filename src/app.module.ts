@@ -23,12 +23,14 @@ import { AulaGrupoMateriasModule } from './aula_grupo_materias/aula_grupo_materi
 
 //PARA MANEJAR REDIS Y BULLMQ PARA LAS COLAS
 import { BullModule } from '@nestjs/bullmq';
+import { ScheduleModule } from '@nestjs/schedule';
 import { InscripcionModule } from './transactions/inscripcion/inscripcion.module';
 import { BoletaGrupoMateriasModule } from './boleta_grupo_materias/boleta_grupo_materias.module';
 import { DetalleInsOfertasModule } from './detalle_ins_ofertas/detalle_ins_ofertas.module';
 import { MaestroDeOfertasModule } from './maestro_de_ofertas/maestro_de_ofertas.module';
 import { OfertaGrupoMateriasModule } from './oferta_grupo_materias/oferta_grupo_materias.module';
 import { BullMQDashboardModule } from './bullmq-dashboard/bullmq-dashboard.module';
+import { SeatRequestsModule } from './seat-requests/seat-requests.module';
 import { GMOfertaModule } from './transactions/generarMaestroDeOferta/gMOferta.module';
 import { ColasModule } from './colas/colas.module';
 import { WorkersModule } from './workers/workers.module';
@@ -69,6 +71,9 @@ import { QueueInterceptor } from './endpoints/interceptors/queue.interceptor';
       },
     }),
 
+    // Módulo de scheduling para cron jobs
+    ScheduleModule.forRoot(),
+
     BoletaGrupoMateriasModule,
 
     DetalleInsOfertasModule,
@@ -82,6 +87,9 @@ import { QueueInterceptor } from './endpoints/interceptors/queue.interceptor';
     WorkersModule,
     EndpointsModule,
     BullMQDashboardModule,
+
+    // Módulo para SeatRequests (reservas temporales)
+    SeatRequestsModule,
   ],
   controllers: [],
   providers: [

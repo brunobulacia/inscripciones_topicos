@@ -114,6 +114,7 @@ model Estudiante {
   BoletaInscripcion BoletaInscripcion[]
   MaestroDeOferta   MaestroDeOferta[]
   avanceAcademico   AvanceAcademico?
+  seatRequests      SeatRequest[] // Relación con reservas temporales
 }
 
 model Materia {
@@ -297,6 +298,7 @@ model OfertaGrupoMateria {
   maestroDeOfertaId String
 
   DetalleInsOferta DetalleInsOferta[]
+  seatRequests     SeatRequest[] // Relación con reservas temporales
 
   estaActivo Boolean  @default(true)
   createdAt  DateTime @default(now())
@@ -359,4 +361,44 @@ model ColaEndpoint {
 
   // Una cola no puede tener el mismo endpoint duplicado
   @@unique([colaId, endpointId])
+}
+
+// Modelo para manejo de reservas temporales (SeatRequest)
+model SeatRequest {
+  id                   String             @id @default(uuid())
+  estudianteId         String
+  estudiante           Estudiante         @relation(fields: [estudianteId], references: [id])
+  ofertaGrupoMateriaId String
+  ofertaGrupoMateria   OfertaGrupoMateria @relation(fields: [ofertaGrupoMateriaId], references: [id])
+
+  // Estados: REQUESTED, CONFIRMED, REJECTED, EXPIRED
+  estado SeatRequestStatus @default(REQUESTED)
+
+  // Timestamps importantes
+  requestedAt DateTime  @default(now())
+  expiresAt   DateTime // Calculado como requestedAt + TTL
+  processedAt DateTime? // Cuando se confirma/rechaza
+
+  // Metadatos
+  prioridad Int     @default(0) // Para lógica de negocio especial
+  motivo    String? // Razón de rechazo si aplica
+
+  // Auditoría
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Un estudiante no puede tener múltiples requests para la misma oferta
+  @@unique([estudianteId, ofertaGrupoMateriaId])
+  // Índices para performance
+  @@index([estado])
+  @@index([expiresAt])
+  @@index([requestedAt])
+}
+
+// Enum para estados de SeatRequest
+enum SeatRequestStatus {
+  REQUESTED // Solicitud pendiente
+  CONFIRMED // Confirmada y convertida en inscripción
+  REJECTED // Rechazada por falta de cupo
+  EXPIRED // Expirada por timeout
 }
