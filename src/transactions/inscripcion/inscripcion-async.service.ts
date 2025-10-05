@@ -57,16 +57,60 @@ export class InscripcionAsyncService {
       }
     }
 
+    // Información detallada de las materias solicitadas
+    const materiasDetalle = await Promise.all(
+      gruposMateriasIds.map(async (grupoMateriaId) => {
+        try {
+          const grupoMateria =
+            await this.seatRequestsService.prisma.grupoMateria.findUnique({
+              where: { id: grupoMateriaId },
+              include: {
+                materia: {
+                  select: { nombre: true, sigla: true },
+                },
+              },
+            });
+          return grupoMateria
+            ? {
+                grupoMateriaId,
+                nombre: grupoMateria.materia.nombre,
+                sigla: grupoMateria.materia.sigla,
+                grupo: grupoMateria.grupo,
+                cuposDisponibles: grupoMateria.cupos,
+              }
+            : null;
+        } catch {
+          return null;
+        }
+      }),
+    ).then((results) => results.filter(Boolean));
+
     return {
+      success: true,
       message:
         'Solicitudes de inscripción procesadas via SeatRequests + BullMQ',
-      reservasCreadas: reservas.length,
-      errores: errores.length,
-      reservas,
+      estudiante: {
+        registro,
+      },
+      solicitudes: {
+        total: reservas.length,
+        exitosas: reservas.length,
+        fallidas: errores.length,
+      },
+      materiassolicitadas: materiasDetalle,
+      reservasCreadas: reservas,
       erroresDetalle: errores,
-      siguientePaso:
-        'Las reservas serán procesadas automáticamente cada 2 minutos por BullMQ. Recibirás una notificación con el resultado.',
+      siguientePaso: {
+        mensaje:
+          'Las reservas serán procesadas automáticamente cada 2 minutos por BullMQ',
+        consultar: `Para ver el estado: GET /api/inscripcion-async/estado/${registro}`,
+        dashboard: 'Monitorea en: http://localhost:3000/admin/queues',
+      },
       sistemaUsado: 'SeatRequests + BullMQ (Reservas temporales)',
+      procesamiento: {
+        automatico: 'Cada 2 minutos',
+        inmediato: 'POST /api/seat-requests/bullmq/process',
+      },
     };
   }
 
@@ -74,7 +118,52 @@ export class InscripcionAsyncService {
    * Obtener el estado de las inscripciones de un estudiante por registro
    */
   async getEstadoInscripciones(registro: string) {
-    return this.seatRequestsService.getStudentSeatRequestsByRegistro(registro);
+    const reservas =
+      await this.seatRequestsService.getStudentSeatRequestsByRegistro(registro);
+
+    const resumen = {
+      estudiante: { registro },
+      totalSolicitudes: reservas.length,
+      pendientes: reservas.filter((r) => r.estado === 'REQUESTED').length,
+      confirmadas: reservas.filter((r) => r.estado === 'CONFIRMED').length,
+      rechazadas: reservas.filter((r) => r.estado === 'REJECTED').length,
+      expiradas: reservas.filter((r) => r.estado === 'EXPIRED').length,
+    };
+
+    const inscripcionesConfirmadas = reservas
+      .filter((r) => r.estado === 'CONFIRMED')
+      .map((r) => ({
+        id: r.id,
+        materia: {
+          nombre: r.ofertaGrupoMateria.GrupoMateria.materia.nombre,
+          sigla: r.ofertaGrupoMateria.GrupoMateria.materia.sigla,
+          grupo: r.ofertaGrupoMateria.GrupoMateria.grupo,
+        },
+        fechaInscripcion: r.processedAt,
+        estado: 'INSCRITO',
+      }));
+
+    const solicitudesPendientes = reservas
+      .filter((r) => r.estado === 'REQUESTED')
+      .map((r) => ({
+        id: r.id,
+        materia: {
+          nombre: r.ofertaGrupoMateria.GrupoMateria.materia.nombre,
+          sigla: r.ofertaGrupoMateria.GrupoMateria.materia.sigla,
+          grupo: r.ofertaGrupoMateria.GrupoMateria.grupo,
+        },
+        fechaSolicitud: r.requestedAt,
+        expiraEn: r.expiresAt,
+        estado: 'PENDIENTE',
+      }));
+
+    return {
+      resumen,
+      inscripcionesConfirmadas,
+      solicitudesPendientes,
+      todasLasReservas: reservas,
+      ultimaActualizacion: new Date().toISOString(),
+    };
   }
 
   /**

@@ -18,7 +18,7 @@ export class SeatRequestsService implements OnModuleInit {
   private readonly TTL_MINUTES = 15; // Tiempo de vida de la reserva temporal
 
   constructor(
-    private readonly prisma: PrismaService,
+    public readonly prisma: PrismaService,
     @InjectQueue('seat-processing') private readonly seatQueue: Queue,
     private readonly dashboardService: BullMQDashboardService,
   ) {}
@@ -26,7 +26,9 @@ export class SeatRequestsService implements OnModuleInit {
   async onModuleInit() {
     // Registrar la cola en el dashboard cuando se inicializa el módulo
     this.dashboardService.addQueue(this.seatQueue);
-    this.logger.log('✅ Cola seat-processing registrada en el dashboard BullMQ');
+    this.logger.log(
+      '✅ Cola seat-processing registrada en el dashboard BullMQ',
+    );
   }
 
   /**
@@ -173,7 +175,13 @@ export class SeatRequestsService implements OnModuleInit {
 
     if (pendingRequests.length === 0) {
       this.logger.log('✅ No hay reservas pendientes para procesar');
-      return { processed: 0, confirmed: 0, rejected: 0 };
+      return {
+        processed: 0,
+        confirmed: 0,
+        rejected: 0,
+        inscripciones: [],
+        rechazadas: [],
+      };
     }
 
     // Agrupar por ofertaGrupoMateriaId
@@ -189,12 +197,24 @@ export class SeatRequestsService implements OnModuleInit {
 
     let totalConfirmed = 0;
     let totalRejected = 0;
+    const inscripcionesConfirmadas: any[] = [];
+    const solicitudesRechazadas: any[] = [];
 
     // Procesar cada oferta
     for (const [ofertaId, requests] of Object.entries(requestsByOferta)) {
       const result = await this.processRequestsForOferta(ofertaId, requests);
       totalConfirmed += result.confirmed;
       totalRejected += result.rejected;
+
+      // Agregar detalles de inscripciones confirmadas
+      if (result.inscripcionesConfirmadas) {
+        inscripcionesConfirmadas.push(...result.inscripcionesConfirmadas);
+      }
+
+      // Agregar detalles de solicitudes rechazadas
+      if (result.solicitudesRechazadas) {
+        solicitudesRechazadas.push(...result.solicitudesRechazadas);
+      }
     }
 
     this.logger.log(
@@ -205,6 +225,21 @@ export class SeatRequestsService implements OnModuleInit {
       processed: pendingRequests.length,
       confirmed: totalConfirmed,
       rejected: totalRejected,
+      inscripciones: inscripcionesConfirmadas,
+      rechazadas: solicitudesRechazadas,
+      resumen: {
+        estudiantesInscritos: [
+          ...new Set(
+            inscripcionesConfirmadas.map((i) => i.estudiante.registro),
+          ),
+        ],
+        materiasInscritas: inscripcionesConfirmadas.map((i) => ({
+          materia: i.materia.nombre,
+          sigla: i.materia.sigla,
+          grupo: i.grupo,
+        })),
+        totalCuposAsignados: totalConfirmed,
+      },
     };
   }
 
@@ -212,51 +247,103 @@ export class SeatRequestsService implements OnModuleInit {
    * Procesar reservas para una oferta específica
    */
   private async processRequestsForOferta(ofertaId: string, requests: any[]) {
-    // Obtener cupos disponibles actuales
+    // Obtener cupos disponibles actuales con información completa
     const oferta = await this.prisma.ofertaGrupoMateria.findUnique({
       where: { id: ofertaId },
-      include: { GrupoMateria: true },
+      include: {
+        GrupoMateria: {
+          include: {
+            materia: true,
+          },
+        },
+      },
     });
 
     if (!oferta) {
       // Marcar todas como rechazadas si la oferta no existe
+      const rejectedDetails = requests.map((r) => ({
+        seatRequestId: r.id,
+        estudiante: {
+          registro: r.estudiante?.matricula || 'N/A',
+          nombre: r.estudiante?.nombre || 'N/A',
+        },
+        motivo: 'Oferta no disponible',
+      }));
+
       await this.rejectRequests(
         requests.map((r) => r.id),
         'Oferta no disponible',
       );
-      return { confirmed: 0, rejected: requests.length };
+      return {
+        confirmed: 0,
+        rejected: requests.length,
+        inscripcionesConfirmadas: [],
+        solicitudesRechazadas: rejectedDetails,
+      };
     }
 
     const cuposDisponibles = oferta.GrupoMateria.cupos;
     const requestsToConfirm = requests.slice(0, cuposDisponibles);
     const requestsToReject = requests.slice(cuposDisponibles);
 
+    const inscripcionesConfirmadas: any[] = [];
+    const solicitudesRechazadas: any[] = [];
+
     // Confirmar las primeras N solicitudes
     let confirmed = 0;
     for (const request of requestsToConfirm) {
       try {
-        await this.confirmSeatRequest(request.id);
+        const inscripcionResult = await this.confirmSeatRequest(request.id);
         confirmed++;
+
+        // Agregar detalles de la inscripción confirmada usando la respuesta del método
+        inscripcionesConfirmadas.push({
+          seatRequestId: request.id,
+          reservaId: inscripcionResult.id,
+          estudiante: inscripcionResult.inscriptionDetails.estudiante,
+          materia: inscripcionResult.inscriptionDetails.materia,
+          docente: inscripcionResult.inscriptionDetails.docente,
+          fechaConfirmacion:
+            inscripcionResult.inscriptionDetails.fechaConfirmacion,
+          mensaje: inscripcionResult.message,
+        });
       } catch (error) {
         this.logger.error(
           `Error confirmando reserva ${request.id}:`,
           error.message,
         );
         await this.rejectRequest(request.id, 'Error interno');
+
+        solicitudesRechazadas.push({
+          seatRequestId: request.id,
+          estudiante: {
+            registro: request.estudiante.matricula,
+            nombre: `${request.estudiante.nombre} ${request.estudiante.apellido_paterno}`,
+          },
+          motivo: 'Error interno: ' + error.message,
+        });
       }
     }
 
-    // Rechazar el resto
-    if (requestsToReject.length > 0) {
-      await this.rejectRequests(
-        requestsToReject.map((r) => r.id),
-        'No hay cupos suficientes',
-      );
+    // Rechazar el resto por falta de cupos
+    for (const request of requestsToReject) {
+      await this.rejectRequest(request.id, 'No hay cupos suficientes');
+
+      solicitudesRechazadas.push({
+        seatRequestId: request.id,
+        estudiante: {
+          registro: request.estudiante.matricula,
+          nombre: `${request.estudiante.nombre} ${request.estudiante.apellido_paterno}`,
+        },
+        motivo: 'No hay cupos suficientes',
+      });
     }
 
     return {
       confirmed,
       rejected: requestsToReject.length,
+      inscripcionesConfirmadas,
+      solicitudesRechazadas,
     };
   }
 
@@ -308,7 +395,75 @@ export class SeatRequestsService implements OnModuleInit {
 
       this.logger.log(`✅ Reserva confirmada: ${seatRequestId}`);
 
-      return seatRequest;
+      // Obtener información completa para la respuesta
+      const confirmedRequest = await tx.seatRequest.findUnique({
+        where: { id: seatRequestId },
+        include: {
+          estudiante: {
+            select: {
+              nombre: true,
+              apellido_paterno: true,
+              matricula: true,
+            },
+          },
+          ofertaGrupoMateria: {
+            include: {
+              GrupoMateria: {
+                include: {
+                  materia: {
+                    select: {
+                      nombre: true,
+                      sigla: true,
+                    },
+                  },
+                  docente: {
+                    select: {
+                      nombre: true,
+                      apellido_paterno: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!confirmedRequest) {
+        throw new BadRequestException(
+          'No se pudo obtener la información de la reserva confirmada',
+        );
+      }
+
+      return {
+        ...confirmedRequest,
+        message: `Inscripción confirmada para ${confirmedRequest.estudiante.matricula} en ${confirmedRequest.ofertaGrupoMateria.GrupoMateria.materia.sigla}`,
+        inscriptionDetails: {
+          estudiante: {
+            nombre: confirmedRequest.estudiante.nombre,
+            apellido: confirmedRequest.estudiante.apellido_paterno,
+            matricula: confirmedRequest.estudiante.matricula,
+          },
+          materia: {
+            nombre:
+              confirmedRequest.ofertaGrupoMateria.GrupoMateria.materia.nombre,
+            sigla:
+              confirmedRequest.ofertaGrupoMateria.GrupoMateria.materia.sigla,
+            grupo: confirmedRequest.ofertaGrupoMateria.GrupoMateria.grupo,
+          },
+          docente: confirmedRequest.ofertaGrupoMateria.GrupoMateria.docente
+            ? {
+                nombre:
+                  confirmedRequest.ofertaGrupoMateria.GrupoMateria.docente
+                    .nombre,
+                apellido:
+                  confirmedRequest.ofertaGrupoMateria.GrupoMateria.docente
+                    .apellido_paterno,
+              }
+            : null,
+          fechaConfirmacion: new Date().toISOString(),
+        },
+      };
     });
   }
 
