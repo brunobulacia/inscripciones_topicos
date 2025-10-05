@@ -57,15 +57,45 @@ export class InscripcionService {
     }
 
     // BUSCAMOS LAS MATERIAS QUE QUEREMOS INSCRIBIR
-    const materias = await prisma.ofertaGrupoMateria.findMany({
+    console.log(
+      '🔍 Buscando materias con IDs:',
+      createInscripcionDto.materiasId,
+    );
+    const todasLasMaterias = await prisma.ofertaGrupoMateria.findMany({
       where: {
         grupoMateriaId: { in: createInscripcionDto.materiasId },
       },
       include: { GrupoMateria: true },
     });
 
+    // Para cada grupoMateriaId solicitado, tomar solo la primera oferta disponible
+    const materias: typeof todasLasMaterias = [];
+    for (const grupoMateriaId of createInscripcionDto.materiasId) {
+      const primeraOferta = todasLasMaterias.find(
+        (m) => m.grupoMateriaId === grupoMateriaId,
+      );
+      if (primeraOferta) {
+        materias.push(primeraOferta);
+      }
+    }
+
+    console.log('📚 Materias encontradas:', materias.length);
+    console.log('📝 IDs solicitados:', createInscripcionDto.materiasId.length);
+
     //VALIDAR SI EL ESTUDIANTE QUIERE INSCRIBIR MAS DE 7 MATERIAS
     if (materias.length !== createInscripcionDto.materiasId.length) {
+      console.log('❌ ERROR: No se encontraron todas las materias');
+      console.log(
+        'IDs buscados (grupoMateriaId):',
+        createInscripcionDto.materiasId,
+      );
+      console.log(
+        'Materias encontradas:',
+        materias.map((m) => ({
+          ofertaId: m.id,
+          grupoMateriaId: m.grupoMateriaId,
+        })),
+      );
       throw new NotFoundException(
         'Alguna de las materias seleccionadas no existe',
       );
@@ -125,20 +155,80 @@ export class InscripcionService {
       }
     }
 
-    // FILTRAMOS LAS MATERIAS CON CUPO DISPONIBLE Y DE UNA CONSTRUIMOS EL PAYLOAD
-    const payload = materias
-      .filter((materia) => materia.GrupoMateria.cupos > 0)
-      .map((materia) => ({
-        detalleInscripcionId: createDetalleInscripcion.id,
-        ofertaGrupoMateriaId: materia.id,
-        estado: 'INSCRITA',
-      }));
+    // VERIFICAR CUPOS DISPONIBLES ANTES DE PROCEDER
+    const materiasDisponibles = materias.filter(
+      (materia) => materia.GrupoMateria.cupos > 0,
+    );
 
-    if (payload.length === 0) {
-      throw new NotAcceptableException('Ninguna materia tiene cupo disponible');
+    if (materiasDisponibles.length === 0) {
+      throw new NotAcceptableException(
+        'Ninguna de las materias seleccionadas tiene cupo disponible',
+      );
     }
 
+    // Si no todas las materias tienen cupo, informar cuáles no están disponibles
+    if (materiasDisponibles.length !== materias.length) {
+      const materiasSinCupo = materias.filter(
+        (materia) => materia.GrupoMateria.cupos <= 0,
+      );
+      const nombresSinCupo = await prisma.materia.findMany({
+        where: {
+          id: {
+            in: materiasSinCupo.map((m) => m.GrupoMateria.materiaId),
+          },
+        },
+        select: {
+          nombre: true,
+          sigla: true,
+        },
+      });
+
+      throw new NotAcceptableException(
+        `Las siguientes materias no tienen cupo disponible: ${nombresSinCupo
+          .map((m) => `${m.sigla} - ${m.nombre}`)
+          .join(', ')}`,
+      );
+    }
+
+    // CONSTRUIR EL PAYLOAD SOLO CON MATERIAS QUE TIENEN CUPO
+    const payload = materiasDisponibles.map((materia) => ({
+      detalleInscripcionId: createDetalleInscripcion.id,
+      ofertaGrupoMateriaId: materia.id,
+      estado: 'INSCRITA',
+    }));
+
     console.log(payload);
+
+    // ANTES DE INSCRIBIR, VERIFICAR NUEVAMENTE LOS CUPOS (doble validación por concurrencia)
+    const materiasActualizadas = await prisma.ofertaGrupoMateria.findMany({
+      where: {
+        id: { in: payload.map((p) => p.ofertaGrupoMateriaId) },
+      },
+      include: { GrupoMateria: true },
+    });
+
+    const materiasSinCupoActual = materiasActualizadas.filter(
+      (m) => m.GrupoMateria.cupos <= 0,
+    );
+    if (materiasSinCupoActual.length > 0) {
+      const nombresSinCupo = await prisma.materia.findMany({
+        where: {
+          id: {
+            in: materiasSinCupoActual.map((m) => m.GrupoMateria.materiaId),
+          },
+        },
+        select: {
+          nombre: true,
+          sigla: true,
+        },
+      });
+
+      throw new NotAcceptableException(
+        `Las siguientes materias ya no tienen cupo disponible debido a concurrencia: ${nombresSinCupo
+          .map((m) => `${m.sigla} - ${m.nombre}`)
+          .join(', ')}`,
+      );
+    }
 
     //INSCRIBIMOS TODAS LAS MATERIAS DE UN SAQUE PERRITO
     const createDetalleInsGrupoMat = await prisma.detalleInsOferta.createMany({
@@ -157,15 +247,23 @@ export class InscripcionService {
       include: { OfertaGrupoMateria: { include: { GrupoMateria: true } } },
     });
 
-    //AHORA A LAS MATERIAS INSCRITAS HAY QUE DISMINUIRLES UN CUPO
-    const materiasConCupo = materiasInscritas.filter(
-      (materia) => materia.OfertaGrupoMateria.GrupoMateria.cupos > 0,
-    );
-    for (const materia of materiasConCupo) {
-      await prisma.grupoMateria.update({
-        where: { id: materia.OfertaGrupoMateria.GrupoMateria.id },
+    //AHORA A LAS MATERIAS INSCRITAS HAY QUE DISMINUIRLES UN CUPO CON VALIDACIÓN
+    for (const materiaInscrita of materiasInscritas) {
+      // Usar un update condicional que solo decrementa si hay cupos disponibles
+      const updateResult = await prisma.grupoMateria.updateMany({
+        where: {
+          id: materiaInscrita.OfertaGrupoMateria.GrupoMateria.id,
+          cupos: { gt: 0 }, // Solo actualizar si cupos > 0
+        },
         data: { cupos: { decrement: 1 }, inscritos: { increment: 1 } },
       });
+
+      // Si no se pudo actualizar, significa que ya no hay cupos
+      if (updateResult.count === 0) {
+        throw new NotAcceptableException(
+          `La materia ${materiaInscrita.OfertaGrupoMateria.GrupoMateria.grupo} ya no tiene cupos disponibles debido a concurrencia`,
+        );
+      }
     }
 
     await this.mapearMateriasInscritasABoletaEnTransaccion(

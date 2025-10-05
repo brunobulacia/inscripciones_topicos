@@ -713,7 +713,7 @@ const gruposMateria = [
     id: '49ba5aaa-8217-4ea7-a6ef-ab55aaaed941',
     grupo: 'SC',
     inscritos: 0,
-    cupos: 20,
+    cupos: 1,
     materiaId: '2cde4bc0-093e-4c8b-89aa-29e6915cf96b',
     docenteId: '2c74dfdf-bbdf-4763-b11a-6f45fff9cef3',
     periodoId: 'e98c933f-d706-4bdc-bdf8-755ea315b0eb',
@@ -722,7 +722,7 @@ const gruposMateria = [
     id: '1d23b410-00b3-4a85-aafe-4ae7a3139151',
     grupo: 'SA',
     inscritos: 0,
-    cupos: 20,
+    cupos: 1,
     materiaId: '6b46118c-53be-4b3b-925f-b7a010f54b1b',
     docenteId: '783748cb-1e4e-409a-9b41-8ed2705d9e20',
     periodoId: 'e98c933f-d706-4bdc-bdf8-755ea315b0eb',
@@ -748,12 +748,28 @@ const estudiantes = [
     matricula: '223041866',
     ppac: 60,
   },
+  {
+    id: 'cf603c06-4d3d-41de-8165-334267eaf9f5',
+    nombre: 'Ana',
+    apellido_paterno: 'Gomez',
+    apellido_materno: 'Lopez',
+    telefono: '12345678',
+    ci: '1234567',
+    email: 'anagomez@icloud.com',
+    matricula: '223041867',
+    password: 'ANA6464',
+    ppac: 70,
+  },
 ];
 
 const avanceAcademico = [
   {
     id: '0197739f-528c-47ee-bc75-696ef6b96818',
     estudianteId: 'd24eb3b9-fd77-48eb-8be7-d4591fbe9cbc',
+  },
+  {
+    id: 'cb71c3af-ae0c-4adc-903d-121f3c23e682',
+    estudianteId: 'cf603c06-4d3d-41de-8165-334267eaf9f5',
   },
 ];
 
@@ -763,6 +779,11 @@ const boletaInscripcion = [
     estudianteId: 'd24eb3b9-fd77-48eb-8be7-d4591fbe9cbc',
     avanceAcademicoId: '0197739f-528c-47ee-bc75-696ef6b96818',
   },
+  {
+    id: '95548e83-9ef4-4a05-b85e-5b98827b6998',
+    estudianteId: 'cf603c06-4d3d-41de-8165-334267eaf9f5',
+    avanceAcademicoId: 'cb71c3af-ae0c-4adc-903d-121f3c23e682',
+  },
 ];
 
 const maestroDeOferta = [
@@ -770,6 +791,11 @@ const maestroDeOferta = [
     id: '80be2bf8-efac-4adc-afcd-36e166fc17f0',
     periodoId: 'e98c933f-d706-4bdc-bdf8-755ea315b0eb',
     estudianteId: 'd24eb3b9-fd77-48eb-8be7-d4591fbe9cbc',
+  },
+  {
+    id: '8c0e6c3c-39ee-45f9-a32c-13efe6877fb9',
+    periodoId: 'e98c933f-d706-4bdc-bdf8-755ea315b0eb',
+    estudianteId: 'cf603c06-4d3d-41de-8165-334267eaf9f5',
   },
 ];
 
@@ -785,9 +811,14 @@ const ofertaGrupoMateria = [
     maestroDeOfertaId: '80be2bf8-efac-4adc-afcd-36e166fc17f0',
   },
   {
-    id: 'c03ab71c-39b8-42c0-89c7-1984f326b363',
+    id: '7cacf665-b282-43c7-9e6a-ede9f8d350c3',
+    grupoMateriaId: '49ba5aaa-8217-4ea7-a6ef-ab55aaaed941',
+    maestroDeOfertaId: '8c0e6c3c-39ee-45f9-a32c-13efe6877fb9',
+  },
+  {
+    id: '510cef53-b55d-40d2-a6ae-8a17f5828531',
     grupoMateriaId: '1d23b410-00b3-4a85-aafe-4ae7a3139151',
-    maestroDeOfertaId: '80be2bf8-efac-4adc-afcd-36e166fc17f0',
+    maestroDeOfertaId: '8c0e6c3c-39ee-45f9-a32c-13efe6877fb9',
   },
 ];
 
